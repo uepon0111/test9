@@ -1,0 +1,80 @@
+name: Build and deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      asset_url:
+        description: .asset file URL
+        required: false
+        default: https://storage.sekai.best/sekai-en-assets/event_story/event_ashiato_2021/scenario/event_39_01.asset
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  DEFAULT_ASSET_URL: https://storage.sekai.best/sekai-en-assets/event_story/event_ashiato_2021/scenario/event_39_01.asset
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Extract talk data
+        shell: bash
+        run: |
+          set -euo pipefail
+          ASSET_URL="${{ github.event.inputs.asset_url }}"
+          if [ -z "${ASSET_URL:-}" ]; then
+            ASSET_URL="$DEFAULT_ASSET_URL"
+          fi
+          python scripts/extract_talkdata.py --url "$ASSET_URL" --out docs/data/event_39_01.talk.json
+
+      - name: Add fallback data if extraction failed
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > docs/data/event_39_01.talk.json <<'JSON'
+          {
+            "source_url": "https://storage.sekai.best/sekai-en-assets/event_story/event_ashiato_2021/scenario/event_39_01.asset",
+            "fetched_at": null,
+            "scenario_id": "event_39_01",
+            "name": "event_39_01",
+            "first_bgm": null,
+            "first_background": null,
+            "appear_characters": [],
+            "talk_count": 0,
+            "talks": []
+          }
+          JSON
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
