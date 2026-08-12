@@ -1,0 +1,96 @@
+:root{
+  --bg:#f5f6f8;
+  --panel:#fff;
+  --border:#e2e5ea;
+  --text:#1d232d;
+  --muted:#6b7280;
+  --accent:#3867d6;
+  --accent-soft:#eef3ff;
+  --danger:#b42318;
+  --danger-bg:#fff3f1;
+  --shadow:0 2px 10px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
+button,input{font:inherit}
+button,a{ -webkit-tap-highlight-color:transparent }
+.topbar{height:58px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:10}
+.brand{font-weight:700;font-size:16px}
+.top-actions{display:flex;gap:8px;align-items:center}
+.icon-btn,.link-btn,.back-btn,.small-btn{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:8px;cursor:pointer;text-decoration:none}
+.icon-btn{width:36px;height:36px;font-size:20px}
+.link-btn{padding:8px 11px;font-size:13px}
+.layout{display:grid;grid-template-columns:330px minmax(0,1fr);min-height:calc(100vh - 98px)}
+.sidebar{border-right:1px solid var(--border);padding:14px;background:#f8f9fb}
+.content{padding:14px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
+.sidebar .panel{height:calc(100vh - 86px);overflow:hidden;display:flex;flex-direction:column}
+.panel-title{font-size:13px;font-weight:700;padding:14px 14px 8px}
+.search-row{padding:0 12px 10px}
+input[type=search]{width:100%;height:38px;border:1px solid var(--border);border-radius:8px;padding:0 11px;background:#fff;outline:none}
+input[type=search]:focus{border-color:#9bb3ef;box-shadow:0 0 0 3px rgba(56,103,214,.1)}
+.status{font-size:12px;color:var(--muted);padding:0 14px 10px}
+.list{overflow:auto;padding:0 8px 10px;min-height:0}
+.event-item{border:1px solid transparent;border-radius:8px;padding:10px;margin-bottom:4px;cursor:pointer}
+.event-item:hover{background:#fafbfc}
+.event-item.active{background:var(--accent-soft);border-color:#cbd8fb}
+.event-name{font-size:13px;font-weight:600;line-height:1.35}
+.event-meta{font-size:11px;color:var(--muted);margin-top:4px}
+.empty-state{height:100%;min-height:480px;display:grid;place-items:center;text-align:center;color:var(--muted);padding:30px}
+.empty-state h1{font-size:20px;color:var(--text);margin:14px 0 6px}
+.empty-state p{font-size:13px;margin:0;max-width:520px;line-height:1.7}
+.empty-icon{width:62px;height:62px;border:1px solid var(--border);border-radius:50%;display:grid;place-items:center;background:#fff;font-size:28px;color:var(--accent);margin:auto}
+.hidden{display:none!important}
+.story-header{padding:14px}
+.back-btn{padding:8px 11px;font-size:12px;margin-bottom:12px}
+.story-title{font-size:21px;font-weight:800;line-height:1.35}
+.story-info{font-size:12px;color:var(--muted);margin-top:6px}
+.episode-tabs{margin-top:12px;padding-bottom:12px}
+.episode-list{display:flex;gap:7px;overflow:auto;padding:0 12px}
+.ep-btn{flex:0 0 auto;min-width:74px;border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 10px;text-align:left;cursor:pointer}
+.ep-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.ep-no{font-size:11px;opacity:.8}
+.ep-name{font-size:12px;font-weight:700;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.episode-view{margin-top:12px}
+.episode-header{padding:14px;display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.episode-title{font-size:18px;font-weight:800}
+.episode-sub{font-size:11px;color:var(--muted);margin-top:4px;word-break:break-all}
+.episode-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.small-btn{padding:7px 9px;font-size:12px}
+.toolbar{margin-top:10px;padding:10px 12px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.check{font-size:12px;color:#4b5563;display:flex;align-items:center;gap:5px}
+.toolbar-info{font-size:11px;color:var(--muted);margin-left:auto}
+.loading,.error{margin-top:10px;padding:14px;font-size:13px}
+.error{color:var(--danger);background:var(--danger-bg);border-color:#f3c6c0;white-space:pre-wrap;line-height:1.6}
+.talk-list{margin-top:10px;display:flex;flex-direction:column;gap:9px}
+.talk{background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+.talk-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid #eef0f3}
+.speaker{font-weight:800;font-size:13px}
+.talk-index{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.talk-body{padding:12px;font-size:14px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
+.talk-technical{border-top:1px dashed var(--border);padding:10px 12px;background:#fafbfc;font-size:11px;color:#616b78;line-height:1.65;white-space:pre-wrap}
+.talk.voice{border-left:3px solid var(--accent)}
+.compact .talk-body{padding:8px 12px;font-size:13px;line-height:1.55}
+.compact .talk-list{gap:5px}
+.raw{margin-top:10px;overflow:hidden}
+.raw summary{padding:11px 12px;cursor:pointer;font-size:12px;font-weight:700}
+.raw pre{margin:0;padding:12px;overflow:auto;max-height:500px;border-top:1px solid var(--border);font-size:10px;line-height:1.5;background:#0f141b;color:#d8dee8}
+.footer{min-height:40px;background:#fff;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:10px;color:var(--muted);gap:10px}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;min-height:0}
+  .sidebar{border-right:0;border-bottom:1px solid var(--border);padding:10px}
+  .sidebar .panel{height:auto;max-height:42vh}
+  .content{padding:10px}
+  .event-item{padding:9px}
+}
+@media(max-width:600px){
+  .topbar{padding:0 10px;height:54px}
+  .brand{font-size:14px}
+  .link-btn{display:none}
+  .content{padding:8px}
+  .episode-header{display:block}
+  .episode-actions{justify-content:flex-start;margin-top:10px}
+  .episode-title{font-size:16px}
+  .talk-body{font-size:14px}
+  .footer{padding:8px 10px;display:block}
+}
