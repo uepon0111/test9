@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-08-12T02:01:06.381048+00:00",
+  "episodeCount": 1,
+  "talkCount": 62,
+  "episodes": [
+    {
+      "scenarioId": "event_39_01",
+      "file": "event_story/event_ashiato_2021/scenario/event_39_01.asset",
+      "dataFile": "event_39_01.json",
+      "talkCount": 62,
+      "characterNames": [
+        "Comment",
+        "Ena",
+        "Kanade",
+        "Mafuyu",
+        "Mizuki"
+      ]
+    }
+  ]
+}
