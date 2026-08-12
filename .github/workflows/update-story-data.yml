@@ -1,0 +1,44 @@
+name: Update story data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 18 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build_story_data.py'
+      - '.github/workflows/update-story-data.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: story-data-update
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build story JSON
+        run: python3 scripts/build_story_data.py
+        env:
+          DOWNLOAD_RETRIES: '3'
+          DOWNLOAD_TIMEOUT: '30'
+
+      - name: Commit generated data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/index.json data/stories
+          if git diff --cached --quiet; then
+            echo 'No changes.'
+            exit 0
+          fi
+          git commit -m 'data: update story talk data'
+          git push
