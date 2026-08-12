@@ -1,0 +1,915 @@
+{
+  "scenarioId": "event_39_01",
+  "file": "event_story/event_ashiato_2021/scenario/event_39_01.asset",
+  "firstBackground": "bg_e000102",
+  "firstBgm": "bgm90040",
+  "appearCharacters": [
+    {
+      "Character2dId": 17,
+      "CostumeType": "17kanade_normal"
+    },
+    {
+      "Character2dId": 20,
+      "CostumeType": "20mizuki_cloth001"
+    },
+    {
+      "Character2dId": 19,
+      "CostumeType": "19ena_cloth001"
+    },
+    {
+      "Character2dId": 18,
+      "CostumeType": "18mafuyu_cloth001"
+    },
+    {
+      "Character2dId": 18,
+      "CostumeType": "18mafuyu_normal"
+    }
+  ],
+  "characters": [
+    {
+      "name": "Comment",
+      "character2dIds": [
+        0
+      ]
+    },
+    {
+      "name": "Ena",
+      "character2dIds": [
+        19
+      ]
+    },
+    {
+      "name": "Kanade",
+      "character2dIds": [
+        17
+      ]
+    },
+    {
+      "name": "Mafuyu",
+      "character2dIds": [
+        18
+      ]
+    },
+    {
+      "name": "Mizuki",
+      "character2dIds": [
+        20
+      ]
+    }
+  ],
+  "talks": [
+    {
+      "index": 1,
+      "speaker": "Kanade",
+      "character2dIds": [
+        17
+      ],
+      "body": "...",
+      "voices": [
+        {
+          "character2dId": 17,
+          "voiceId": "voice_ev_night_06_01_01_17"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "How is it, K?\nI tried out all of your suggestions and tried to fix up the ending...",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_02_20"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "speaker": "Kanade",
+      "character2dIds": [
+        17
+      ],
+      "body": "Right...",
+      "voices": [
+        {
+          "character2dId": 17,
+          "voiceId": "voice_ev_night_06_01_03_17"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "speaker": "Kanade",
+      "character2dIds": [
+        17
+      ],
+      "body": "The video syncs up with the chorus much better now. Let's go with this.",
+      "voices": [
+        {
+          "character2dId": 17,
+          "voiceId": "voice_ev_night_06_01_04_17"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Yay!\nTotally worth pulling that all-nighter!",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_05_20"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "*Sigh*\nI'm just glad we managed to figure everything out...",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_06_19"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "And thanks for helping me edit everything towards the end there, Enanan!",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_07_20"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "Now I feel sleep deprived now because of that... Make sure to get some real sleep in tonight, Amia.",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_08_19"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "I will.\nI'll start by sleeping in until noon!",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_09_20"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "speaker": "Kanade",
+      "character2dIds": [
+        17
+      ],
+      "body": "Anyway, this means our song and music video are both done.",
+      "voices": [
+        {
+          "character2dId": 17,
+          "voiceId": "voice_ev_night_06_01_10_17"
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(We finally get to upload it. The song that made Mafuyu smile...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_11_20"
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(She and Kanade put so much effort into this song too...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_12_20"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "I hope this gets a ton of views!",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_13_20"
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "speaker": "Mafuyu",
+      "character2dIds": [
+        18
+      ],
+      "body": "Me too...",
+      "voices": [
+        {
+          "character2dId": 18,
+          "voiceId": "voice_ev_night_06_01_14_18"
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "speaker": "Kanade",
+      "character2dIds": [
+        17
+      ],
+      "body": "You too, Yuki?",
+      "voices": [
+        {
+          "character2dId": 17,
+          "voiceId": "voice_ev_night_06_01_15_17"
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "speaker": "Mafuyu",
+      "character2dIds": [
+        18
+      ],
+      "body": "It's better than nobody seeing it.",
+      "voices": [
+        {
+          "character2dId": 18,
+          "voiceId": "voice_ev_night_06_01_16_18"
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "speaker": "Kanade",
+      "character2dIds": [
+        17
+      ],
+      "body": "Right.",
+      "voices": [
+        {
+          "character2dId": 17,
+          "voiceId": "voice_ev_night_06_01_17_17"
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Hehe...",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_18_20"
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "speaker": "Kanade",
+      "character2dIds": [
+        17
+      ],
+      "body": "Okay, I'm uploading it now.",
+      "voices": [
+        {
+          "character2dId": 17,
+          "voiceId": "voice_ev_night_06_01_19_17"
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "Hehe. I can't wait to see what people say about it, but I should probably hit the hay now... *Yawn*...",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_20_19"
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "speaker": "Kanade",
+      "character2dIds": [
+        17
+      ],
+      "body": "Great work, everyone.\nThis took a lot out of us, so we should all get some well-deserved rest.",
+      "voices": [
+        {
+          "character2dId": 17,
+          "voiceId": "voice_ev_night_06_01_21_17"
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "speaker": "Mafuyu",
+      "character2dIds": [
+        18
+      ],
+      "body": "Okay...\nGood night.",
+      "voices": [
+        {
+          "character2dId": 18,
+          "voiceId": "voice_ev_night_06_01_22_18"
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "Night.\nOh, I think I'll take a bath first...",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_23_19"
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Night, everyone!",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_24_20"
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Mhm...\nMan, I slept great...!",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_25_20"
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "But I still feel really drowsy. I guess I did stay up pretty late last night.",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_26_20"
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Oh, it's 10:00...?\nI don't have school or work today, so I can go back to... Wait!",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_27_20"
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Our new song!\nWhat are people saying about it?",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_28_20"
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Huh?! It has this many views already?! In less than half a day...?",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_29_20"
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "speaker": "Comment",
+      "character2dIds": [
+        0
+      ],
+      "body": "N25's new song's amazing!",
+      "voices": []
+    },
+    {
+      "index": 31,
+      "speaker": "Comment",
+      "character2dIds": [
+        0
+      ],
+      "body": "I didn't know they could make music like this.",
+      "voices": []
+    },
+    {
+      "index": 32,
+      "speaker": "Comment",
+      "character2dIds": [
+        0
+      ],
+      "body": "I've had a lot on my mind lately, but I feel way better after hearing this song.",
+      "voices": []
+    },
+    {
+      "index": 33,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(Thank goodness...\nIt's reaching everyone.)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_30_20"
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(The others really put everything they had into this song, so I couldn't be happier.)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_31_20"
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(Especially Kanade... She really is an incredible person...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_32_20"
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(It all started with Mafuyu saying, “This isn't good enough.” And now, she's found a way to reach not just Mafuyu, but all these other people...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_33_20"
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(It's not just Kanade either. Mafuyu and Ena are also really amazing people.)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_34_20"
+        }
+      ]
+    },
+    {
+      "index": 38,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(They're taking a hard look at themselves and facing their problems despite how uncomfortable that might be.)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_35_20"
+        }
+      ]
+    },
+    {
+      "index": 39,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(But look at me...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_36_20"
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(I haven't changed at all.)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_37_20"
+        }
+      ]
+    },
+    {
+      "index": 41,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(I'm still stuck in the same place...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_38_20"
+        }
+      ]
+    },
+    {
+      "index": 42,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Huh? A message? At this time?",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_39_20"
+        }
+      ]
+    },
+    {
+      "index": 43,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "You awake? Did you see the view count?",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_40_19"
+        }
+      ]
+    },
+    {
+      "index": 44,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Oh, it's Ena...\nShe's awake already?",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_41_20"
+        }
+      ]
+    },
+    {
+      "index": 45,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "<Yeah, I saw! Isn't it awesome?! It's like double what we usually get!> And send...",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_42_20"
+        }
+      ]
+    },
+    {
+      "index": 46,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "Everyone's saying that the video goes really well with the music, so this one might end up becoming our best one yet, you know?",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_43_19"
+        }
+      ]
+    },
+    {
+      "index": 47,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Yeah!\nI hope K and Yuki get to enjoy this too!",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_44_20"
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "This also means we should pick a date to do an after party. When are you gonna be free, Amia?",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_45_19"
+        }
+      ]
+    },
+    {
+      "index": 49,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Oh...",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_46_20"
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "My work schedule hasn't been decided yet, but I should know sometime this week. I'll let you know when I find out.",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_47_20"
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "Okay.\nI'll ask K and Yuki in the meantime.",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_48_19"
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(An after party...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_49_20"
+        }
+      ]
+    },
+    {
+      "index": 53,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(I want to go, but...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_50_20"
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "You're coming, right?",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_51_19"
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "speaker": "Ena",
+      "character2dIds": [
+        19
+      ],
+      "body": "These things aren't as fun when you're not there.",
+      "voices": [
+        {
+          "character2dId": 19,
+          "voiceId": "voice_ev_night_06_01_52_19"
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Ena...",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_53_20"
+        }
+      ]
+    },
+    {
+      "index": 57,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Yeah, I'll be there.",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_54_20"
+        }
+      ]
+    },
+    {
+      "index": 58,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Poor, lonely Ena♪",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_55_20"
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "Haha...\nYup, she's mad.",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_56_20"
+        }
+      ]
+    },
+    {
+      "index": 60,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "But Ena really is a good person...\nI mean, she's willing to put up with me like this.",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_57_20"
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(I know that I haven't made any progress up until now...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_58_20"
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "speaker": "Mizuki",
+      "character2dIds": [
+        20
+      ],
+      "body": "(But I hope that I'll become closer with them, someday...)",
+      "voices": [
+        {
+          "character2dId": 20,
+          "voiceId": "voice_ev_night_06_01_59_20"
+        }
+      ]
+    }
+  ]
+}
