@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Project SEKAI event story asset viewer">
+  <title>Event Story Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <div>
+        <div class="eyebrow">PROJECT SEKAI · ASSET VIEWER</div>
+        <h1 id="story-title">Loading story…</h1>
+        <p id="story-meta" class="muted"></p>
+      </div>
+      <button id="theme-toggle" class="button ghost" type="button" aria-label="Toggle theme">Theme</button>
+    </div>
+  </header>
+
+  <main class="wrap layout">
+    <aside class="sidebar" aria-label="Story navigation">
+      <section class="panel">
+        <div class="panel-title">Characters</div>
+        <div id="characters" class="character-list"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-title">Transcript</div>
+        <div class="controls">
+          <label class="search"><span>Search</span><input id="search" type="search" placeholder="Name or text…"></label>
+          <label class="select"><span>Speaker</span><select id="speaker-filter"><option value="">All speakers</option></select></label>
+        </div>
+      </section>
+    </aside>
+
+    <section class="content">
+      <div class="story-card panel">
+        <div class="story-toolbar">
+          <div><strong id="count-label">0 lines</strong> <span class="muted" id="filter-label"></span></div>
+          <button id="reset" class="button ghost" type="button">Reset filters</button>
+        </div>
+        <div id="talks" class="talks" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <span>Generated from a Project SEKAI scenario asset.</span>
+    <a href="https://sekai.best/asset_viewer/event_story/event_ashiato_2021/scenario/" target="_blank" rel="noopener">Source viewer</a>
+  </footer>
+  <script src="app.js" defer></script>
+</body>
+</html>
