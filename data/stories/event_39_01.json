@@ -1,0 +1,507 @@
+{
+  "scenarioId": "event_39_01",
+  "eventId": 39,
+  "eventStoryId": null,
+  "episodeNo": 1,
+  "title": "",
+  "assetbundleName": "event_ashiato_2021",
+  "sourceUrl": "https://storage.sekai.best/sekai-en-assets/event_story/event_ashiato_2021/scenario/event_39_01.asset",
+  "talks": [
+    {
+      "index": 1,
+      "speaker": "Kanade",
+      "body": "...",
+      "characters": [
+        17
+      ]
+    },
+    {
+      "index": 2,
+      "speaker": "Mizuki",
+      "body": "How is it, K?\nI tried out all of your suggestions and tried to fix up the ending...",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 3,
+      "speaker": "Kanade",
+      "body": "Right...",
+      "characters": [
+        17
+      ]
+    },
+    {
+      "index": 4,
+      "speaker": "Kanade",
+      "body": "The video syncs up with the chorus much better now. Let's go with this.",
+      "characters": [
+        17
+      ]
+    },
+    {
+      "index": 5,
+      "speaker": "Mizuki",
+      "body": "Yay!\nTotally worth pulling that all-nighter!",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 6,
+      "speaker": "Ena",
+      "body": "*Sigh*\nI'm just glad we managed to figure everything out...",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 7,
+      "speaker": "Mizuki",
+      "body": "And thanks for helping me edit everything towards the end there, Enanan!",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 8,
+      "speaker": "Ena",
+      "body": "Now I feel sleep deprived now because of that... Make sure to get some real sleep in tonight, Amia.",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 9,
+      "speaker": "Mizuki",
+      "body": "I will.\nI'll start by sleeping in until noon!",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 10,
+      "speaker": "Kanade",
+      "body": "Anyway, this means our song and music video are both done.",
+      "characters": [
+        17
+      ]
+    },
+    {
+      "index": 11,
+      "speaker": "Mizuki",
+      "body": "(We finally get to upload it. The song that made Mafuyu smile...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 12,
+      "speaker": "Mizuki",
+      "body": "(She and Kanade put so much effort into this song too...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 13,
+      "speaker": "Mizuki",
+      "body": "I hope this gets a ton of views!",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 14,
+      "speaker": "Mafuyu",
+      "body": "Me too...",
+      "characters": [
+        18
+      ]
+    },
+    {
+      "index": 15,
+      "speaker": "Kanade",
+      "body": "You too, Yuki?",
+      "characters": [
+        17
+      ]
+    },
+    {
+      "index": 16,
+      "speaker": "Mafuyu",
+      "body": "It's better than nobody seeing it.",
+      "characters": [
+        18
+      ]
+    },
+    {
+      "index": 17,
+      "speaker": "Kanade",
+      "body": "Right.",
+      "characters": [
+        17
+      ]
+    },
+    {
+      "index": 18,
+      "speaker": "Mizuki",
+      "body": "Hehe...",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 19,
+      "speaker": "Kanade",
+      "body": "Okay, I'm uploading it now.",
+      "characters": [
+        17
+      ]
+    },
+    {
+      "index": 20,
+      "speaker": "Ena",
+      "body": "Hehe. I can't wait to see what people say about it, but I should probably hit the hay now... *Yawn*...",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 21,
+      "speaker": "Kanade",
+      "body": "Great work, everyone.\nThis took a lot out of us, so we should all get some well-deserved rest.",
+      "characters": [
+        17
+      ]
+    },
+    {
+      "index": 22,
+      "speaker": "Mafuyu",
+      "body": "Okay...\nGood night.",
+      "characters": [
+        18
+      ]
+    },
+    {
+      "index": 23,
+      "speaker": "Ena",
+      "body": "Night.\nOh, I think I'll take a bath first...",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 24,
+      "speaker": "Mizuki",
+      "body": "Night, everyone!",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 25,
+      "speaker": "Mizuki",
+      "body": "Mhm...\nMan, I slept great...!",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 26,
+      "speaker": "Mizuki",
+      "body": "But I still feel really drowsy. I guess I did stay up pretty late last night.",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 27,
+      "speaker": "Mizuki",
+      "body": "Oh, it's 10:00...?\nI don't have school or work today, so I can go back to... Wait!",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 28,
+      "speaker": "Mizuki",
+      "body": "Our new song!\nWhat are people saying about it?",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 29,
+      "speaker": "Mizuki",
+      "body": "Huh?! It has this many views already?! In less than half a day...?",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 30,
+      "speaker": "Comment",
+      "body": "N25's new song's amazing!",
+      "characters": [
+        0
+      ]
+    },
+    {
+      "index": 31,
+      "speaker": "Comment",
+      "body": "I didn't know they could make music like this.",
+      "characters": [
+        0
+      ]
+    },
+    {
+      "index": 32,
+      "speaker": "Comment",
+      "body": "I've had a lot on my mind lately, but I feel way better after hearing this song.",
+      "characters": [
+        0
+      ]
+    },
+    {
+      "index": 33,
+      "speaker": "Mizuki",
+      "body": "(Thank goodness...\nIt's reaching everyone.)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 34,
+      "speaker": "Mizuki",
+      "body": "(The others really put everything they had into this song, so I couldn't be happier.)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 35,
+      "speaker": "Mizuki",
+      "body": "(Especially Kanade... She really is an incredible person...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 36,
+      "speaker": "Mizuki",
+      "body": "(It all started with Mafuyu saying, “This isn't good enough.” And now, she's found a way to reach not just Mafuyu, but all these other people...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 37,
+      "speaker": "Mizuki",
+      "body": "(It's not just Kanade either. Mafuyu and Ena are also really amazing people.)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 38,
+      "speaker": "Mizuki",
+      "body": "(They're taking a hard look at themselves and facing their problems despite how uncomfortable that might be.)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 39,
+      "speaker": "Mizuki",
+      "body": "(But look at me...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 40,
+      "speaker": "Mizuki",
+      "body": "(I haven't changed at all.)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 41,
+      "speaker": "Mizuki",
+      "body": "(I'm still stuck in the same place...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 42,
+      "speaker": "Mizuki",
+      "body": "Huh? A message? At this time?",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 43,
+      "speaker": "Ena",
+      "body": "You awake? Did you see the view count?",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 44,
+      "speaker": "Mizuki",
+      "body": "Oh, it's Ena...\nShe's awake already?",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 45,
+      "speaker": "Mizuki",
+      "body": "<Yeah, I saw! Isn't it awesome?! It's like double what we usually get!> And send...",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 46,
+      "speaker": "Ena",
+      "body": "Everyone's saying that the video goes really well with the music, so this one might end up becoming our best one yet, you know?",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 47,
+      "speaker": "Mizuki",
+      "body": "Yeah!\nI hope K and Yuki get to enjoy this too!",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 48,
+      "speaker": "Ena",
+      "body": "This also means we should pick a date to do an after party. When are you gonna be free, Amia?",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 49,
+      "speaker": "Mizuki",
+      "body": "Oh...",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 50,
+      "speaker": "Mizuki",
+      "body": "My work schedule hasn't been decided yet, but I should know sometime this week. I'll let you know when I find out.",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 51,
+      "speaker": "Ena",
+      "body": "Okay.\nI'll ask K and Yuki in the meantime.",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 52,
+      "speaker": "Mizuki",
+      "body": "(An after party...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 53,
+      "speaker": "Mizuki",
+      "body": "(I want to go, but...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 54,
+      "speaker": "Ena",
+      "body": "You're coming, right?",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 55,
+      "speaker": "Ena",
+      "body": "These things aren't as fun when you're not there.",
+      "characters": [
+        19
+      ]
+    },
+    {
+      "index": 56,
+      "speaker": "Mizuki",
+      "body": "Ena...",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 57,
+      "speaker": "Mizuki",
+      "body": "Yeah, I'll be there.",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 58,
+      "speaker": "Mizuki",
+      "body": "Poor, lonely Ena♪",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 59,
+      "speaker": "Mizuki",
+      "body": "Haha...\nYup, she's mad.",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 60,
+      "speaker": "Mizuki",
+      "body": "But Ena really is a good person...\nI mean, she's willing to put up with me like this.",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 61,
+      "speaker": "Mizuki",
+      "body": "(I know that I haven't made any progress up until now...)",
+      "characters": [
+        20
+      ]
+    },
+    {
+      "index": 62,
+      "speaker": "Mizuki",
+      "body": "(But I hope that I'll become closer with them, someday...)",
+      "characters": [
+        20
+      ]
+    }
+  ]
+}
