@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-08-12T02:15:45Z",
+  "source": "Supplied event_39_01.asset; future Actions sync from Sekai-World master data and storage.sekai.best",
+  "totalEvents": 1,
+  "totalEpisodes": 1,
+  "totalTalks": 62,
+  "failedEpisodes": [],
+  "events": [
+    {
+      "id": 39,
+      "name": "Ashes to Ashes, Footprints in the Rain (initial asset)",
+      "assetbundleName": "event_ashiato_2021",
+      "outline": "Initial bundled asset supplied by the user.",
+      "episodes": [
+        {
+          "episodeId": null,
+          "episodeNo": 1,
+          "title": "Event 39 - Episode 1 (initial asset)",
+          "assetbundleName": "event_ashiato_2021_01",
+          "scenarioId": "event_39_01",
+          "file": "event_39_01.json",
+          "sourceUrl": "https://storage.sekai.best/sekai-en-assets/event_story/event_ashiato_2021/scenario/event_39_01.asset",
+          "status": "ok",
+          "talkCount": 62,
+          "characterCount": 5
+        }
+      ]
+    }
+  ]
+}

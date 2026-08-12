@@ -1,0 +1,2104 @@
+{
+  "scenarioId": "event_39_01",
+  "eventId": 39,
+  "eventStoryId": 39,
+  "episodeNo": 1,
+  "title": "Event 39 - Episode 1 (initial asset)",
+  "assetbundleName": "event_ashiato_2021_01",
+  "sourceUrl": "https://storage.sekai.best/sekai-en-assets/event_story/event_ashiato_2021/scenario/event_39_01.asset",
+  "downloadedAt": "2026-08-12T02:15:45Z",
+  "firstBgm": "bgm90040",
+  "firstBackground": "bg_e000102",
+  "appearCharacters": [
+    {
+      "Character2dId": 17,
+      "CostumeType": "17kanade_normal"
+    },
+    {
+      "Character2dId": 20,
+      "CostumeType": "20mizuki_cloth001"
+    },
+    {
+      "Character2dId": 19,
+      "CostumeType": "19ena_cloth001"
+    },
+    {
+      "Character2dId": 18,
+      "CostumeType": "18mafuyu_cloth001"
+    },
+    {
+      "Character2dId": 18,
+      "CostumeType": "18mafuyu_normal"
+    }
+  ],
+  "talks": [
+    {
+      "index": 1,
+      "speaker": "Kanade",
+      "body": "...",
+      "characters": [
+        {
+          "Character2dId": 17
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 17,
+          "VoiceId": "voice_ev_night_06_01_01_17",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 2,
+      "speaker": "Mizuki",
+      "body": "How is it, K?\nI tried out all of your suggestions and tried to fix up the ending...",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_02_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 3,
+      "speaker": "Kanade",
+      "body": "Right...",
+      "characters": [
+        {
+          "Character2dId": 17
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 17,
+          "VoiceId": "voice_ev_night_06_01_03_17",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 17,
+          "MotionName": "w-kanade-nod01",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 4,
+      "speaker": "Kanade",
+      "body": "The video syncs up with the chorus much better now. Let's go with this.",
+      "characters": [
+        {
+          "Character2dId": 17
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 17,
+          "VoiceId": "voice_ev_night_06_01_04_17",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 17,
+          "MotionName": "w-kanade-tilthead01",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 5,
+      "speaker": "Mizuki",
+      "body": "Yay!\nTotally worth pulling that all-nighter!",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_05_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-glad04",
+          "FacialName": "face_smile_02",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 6,
+      "speaker": "Ena",
+      "body": "*Sigh*\nI'm just glad we managed to figure everything out...",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_06_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 19,
+          "MotionName": "w-happy-sad02",
+          "FacialName": "face_trouble_02",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 7,
+      "speaker": "Mizuki",
+      "body": "And thanks for helping me edit everything towards the end there, Enanan!",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_07_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-tilthead07",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 8,
+      "speaker": "Ena",
+      "body": "Now I feel sleep deprived now because of that... Make sure to get some real sleep in tonight, Amia.",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_08_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 19,
+          "MotionName": "w-happy-tilthead04",
+          "FacialName": "face_trouble_02",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 9,
+      "speaker": "Mizuki",
+      "body": "I will.\nI'll start by sleeping in until noon!",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_09_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-nod06",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 10,
+      "speaker": "Kanade",
+      "body": "Anyway, this means our song and music video are both done.",
+      "characters": [
+        {
+          "Character2dId": 17
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 17,
+          "VoiceId": "voice_ev_night_06_01_10_17",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 17,
+          "MotionName": "w-kanade-tilthead02",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 11,
+      "speaker": "Mizuki",
+      "body": "(We finally get to upload it. The song that made Mafuyu smile...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_11_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-glad01",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 12,
+      "speaker": "Mizuki",
+      "body": "(She and Kanade put so much effort into this song too...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_12_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-tilthead02",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 13,
+      "speaker": "Mizuki",
+      "body": "I hope this gets a ton of views!",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_13_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-happy-angry01",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 14,
+      "speaker": "Mafuyu",
+      "body": "Me too...",
+      "characters": [
+        {
+          "Character2dId": 18
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 18,
+          "VoiceId": "voice_ev_night_06_01_14_18",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 18,
+          "MotionName": "w-normal-nod03",
+          "FacialName": "face_normal_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 15,
+      "speaker": "Kanade",
+      "body": "You too, Yuki?",
+      "characters": [
+        {
+          "Character2dId": 17
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 17,
+          "VoiceId": "voice_ev_night_06_01_15_17",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 17,
+          "MotionName": "w-normal-tilthead05",
+          "FacialName": "face_smallmouth_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 16,
+      "speaker": "Mafuyu",
+      "body": "It's better than nobody seeing it.",
+      "characters": [
+        {
+          "Character2dId": 18
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 18,
+          "VoiceId": "voice_ev_night_06_01_16_18",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 18,
+          "MotionName": "w-normal-tilthead02",
+          "FacialName": "face_normal_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 17,
+      "speaker": "Kanade",
+      "body": "Right.",
+      "characters": [
+        {
+          "Character2dId": 17
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 17,
+          "VoiceId": "voice_ev_night_06_01_17_17",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 17,
+          "MotionName": "w-normal-nod05",
+          "FacialName": "face_smile_04",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 18,
+      "speaker": "Mizuki",
+      "body": "Hehe...",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_18_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cool-tilthead01",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 19,
+      "speaker": "Kanade",
+      "body": "Okay, I'm uploading it now.",
+      "characters": [
+        {
+          "Character2dId": 17
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 17,
+          "VoiceId": "voice_ev_night_06_01_19_17",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 17,
+          "MotionName": "w-kanade-tilthead02",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 20,
+      "speaker": "Ena",
+      "body": "Hehe. I can't wait to see what people say about it, but I should probably hit the hay now... *Yawn*...",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_20_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 19,
+          "MotionName": "w-cute-tilthead08",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 21,
+      "speaker": "Kanade",
+      "body": "Great work, everyone.\nThis took a lot out of us, so we should all get some well-deserved rest.",
+      "characters": [
+        {
+          "Character2dId": 17
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 17,
+          "VoiceId": "voice_ev_night_06_01_21_17",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 17,
+          "MotionName": "w-kanade-nod01",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 22,
+      "speaker": "Mafuyu",
+      "body": "Okay...\nGood night.",
+      "characters": [
+        {
+          "Character2dId": 18
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 18,
+          "VoiceId": "voice_ev_night_06_01_22_18",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 18,
+          "MotionName": "w-normal-nod05",
+          "FacialName": "face_normal_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 23,
+      "speaker": "Ena",
+      "body": "Night.\nOh, I think I'll take a bath first...",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_23_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 19,
+          "MotionName": "w-cute-nod04",
+          "FacialName": "face_sleepy_03",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 24,
+      "speaker": "Mizuki",
+      "body": "Night, everyone!",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_24_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-happy-nod02",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 25,
+      "speaker": "Mizuki",
+      "body": "Mhm...\nMan, I slept great...!",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_25_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 26,
+      "speaker": "Mizuki",
+      "body": "But I still feel really drowsy. I guess I did stay up pretty late last night.",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_26_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-tilthead08",
+          "FacialName": "face_sleepy_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 27,
+      "speaker": "Mizuki",
+      "body": "Oh, it's 10:00...?\nI don't have school or work today, so I can go back to... Wait!",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_27_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cool-tilthead04",
+          "FacialName": "face_sleepy_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 28,
+      "speaker": "Mizuki",
+      "body": "Our new song!\nWhat are people saying about it?",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_28_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-glad04",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 29,
+      "speaker": "Mizuki",
+      "body": "Huh?! It has this many views already?! In less than half a day...?",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_29_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cool-forward01",
+          "FacialName": "face_surprise_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 30,
+      "speaker": "Comment",
+      "body": "N25's new song's amazing!",
+      "characters": [
+        {
+          "Character2dId": 0
+        }
+      ],
+      "voices": [],
+      "talkTention": 0,
+      "lipSync": 0,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 31,
+      "speaker": "Comment",
+      "body": "I didn't know they could make music like this.",
+      "characters": [
+        {
+          "Character2dId": 0
+        }
+      ],
+      "voices": [],
+      "talkTention": 0,
+      "lipSync": 0,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 32,
+      "speaker": "Comment",
+      "body": "I've had a lot on my mind lately, but I feel way better after hearing this song.",
+      "characters": [
+        {
+          "Character2dId": 0
+        }
+      ],
+      "voices": [],
+      "talkTention": 0,
+      "lipSync": 0,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 33,
+      "speaker": "Mizuki",
+      "body": "(Thank goodness...\nIt's reaching everyone.)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_30_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-nod05",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 34,
+      "speaker": "Mizuki",
+      "body": "(The others really put everything they had into this song, so I couldn't be happier.)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_31_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-shy01",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 35,
+      "speaker": "Mizuki",
+      "body": "(Especially Kanade... She really is an incredible person...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_32_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-tilthead02",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 36,
+      "speaker": "Mizuki",
+      "body": "(It all started with Mafuyu saying, “This isn't good enough.” And now, she's found a way to reach not just Mafuyu, but all these other people...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_33_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-sad01",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 37,
+      "speaker": "Mizuki",
+      "body": "(It's not just Kanade either. Mafuyu and Ena are also really amazing people.)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_34_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-shakehead01",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 38,
+      "speaker": "Mizuki",
+      "body": "(They're taking a hard look at themselves and facing their problems despite how uncomfortable that might be.)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_35_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-nod01",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 39,
+      "speaker": "Mizuki",
+      "body": "(But look at me...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_36_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-trouble01",
+          "FacialName": "face_sad_02",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 40,
+      "speaker": "Mizuki",
+      "body": "(I haven't changed at all.)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_37_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cool-sad01",
+          "FacialName": "face_sad_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 41,
+      "speaker": "Mizuki",
+      "body": "(I'm still stuck in the same place...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_38_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-happy-tilthead03",
+          "FacialName": "face_sad_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 42,
+      "speaker": "Mizuki",
+      "body": "Huh? A message? At this time?",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_39_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-happy-tilthead04",
+          "FacialName": "face_smallmouth_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 43,
+      "speaker": "Ena",
+      "body": "You awake? Did you see the view count?",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_40_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 44,
+      "speaker": "Mizuki",
+      "body": "Oh, it's Ena...\nShe's awake already?",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_41_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-happy-sad02",
+          "FacialName": "face_smallmouth_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 45,
+      "speaker": "Mizuki",
+      "body": "<Yeah, I saw! Isn't it awesome?! It's like double what we usually get!> And send...",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_42_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cool-tilthead04",
+          "FacialName": "face_smallmouth_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 46,
+      "speaker": "Ena",
+      "body": "Everyone's saying that the video goes really well with the music, so this one might end up becoming our best one yet, you know?",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_43_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 47,
+      "speaker": "Mizuki",
+      "body": "Yeah!\nI hope K and Yuki get to enjoy this too!",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_44_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-nod05",
+          "FacialName": "face_smile_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 48,
+      "speaker": "Ena",
+      "body": "This also means we should pick a date to do an after party. When are you gonna be free, Amia?",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_45_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 49,
+      "speaker": "Mizuki",
+      "body": "Oh...",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_46_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-tilthead08",
+          "FacialName": "face_notice_01",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 50,
+      "speaker": "Mizuki",
+      "body": "My work schedule hasn't been decided yet, but I should know sometime this week. I'll let you know when I find out.",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_47_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cool-sigh01",
+          "FacialName": "face_smile_06",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 51,
+      "speaker": "Ena",
+      "body": "Okay.\nI'll ask K and Yuki in the meantime.",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_48_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 52,
+      "speaker": "Mizuki",
+      "body": "(An after party...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_49_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cool-trouble01",
+          "FacialName": "face_sad_02",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 53,
+      "speaker": "Mizuki",
+      "body": "(I want to go, but...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_50_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-tilthead05",
+          "FacialName": "face_smile_08",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 54,
+      "speaker": "Ena",
+      "body": "You're coming, right?",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_51_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 55,
+      "speaker": "Ena",
+      "body": "These things aren't as fun when you're not there.",
+      "characters": [
+        {
+          "Character2dId": 19
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 19,
+          "VoiceId": "voice_ev_night_06_01_52_19",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 56,
+      "speaker": "Mizuki",
+      "body": "Ena...",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_53_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-tilthead02",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 57,
+      "speaker": "Mizuki",
+      "body": "Yeah, I'll be there.",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_54_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-nod02",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 58,
+      "speaker": "Mizuki",
+      "body": "Poor, lonely Ena♪",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_55_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-nod06",
+          "FacialName": "face_smile_09",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 59,
+      "speaker": "Mizuki",
+      "body": "Haha...\nYup, she's mad.",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_56_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-cute-tilthead02",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 60,
+      "speaker": "Mizuki",
+      "body": "But Ena really is a good person...\nI mean, she's willing to put up with me like this.",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_57_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 1,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-adult-nod02",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 61,
+      "speaker": "Mizuki",
+      "body": "(I know that I haven't made any progress up until now...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_58_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-trouble01",
+          "FacialName": "face_smile_08",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 0,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    },
+    {
+      "index": 62,
+      "speaker": "Mizuki",
+      "body": "(But I hope that I'll become closer with them, someday...)",
+      "characters": [
+        {
+          "Character2dId": 20
+        }
+      ],
+      "voices": [
+        {
+          "Character2dId": 20,
+          "VoiceId": "voice_ev_night_06_01_59_20",
+          "Volume": 1.0
+        }
+      ],
+      "talkTention": 0,
+      "lipSync": 2,
+      "motionChangeFrom": 1,
+      "motions": [
+        {
+          "Character2dId": 20,
+          "MotionName": "w-normal-relief01",
+          "FacialName": "face_smile_07",
+          "TimingSyncValue": 0.0
+        }
+      ],
+      "speed": 0.0,
+      "fontSize": 0,
+      "whenFinishCloseWindow": 1,
+      "requirePlayEffect": 0,
+      "effectReferenceIdx": 0,
+      "requirePlaySound": 0,
+      "soundReferenceIdx": 0
+    }
+  ]
+}
