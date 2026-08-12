@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>SEKAI Story Talk Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">SEKAI Story Talk Viewer</div>
+    <div class="top-actions">
+      <button id="reloadBtn" class="icon-btn" title="データを再読み込み">↻</button>
+      <a href="https://sekai.best/asset_viewer/event_story" target="_blank" rel="noopener" class="link-btn">sekai.best</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="panel">
+        <div class="panel-title">イベントストーリー</div>
+        <div class="search-row">
+          <input id="eventSearch" type="search" placeholder="イベント名・IDで検索" autocomplete="off">
+        </div>
+        <div id="eventStatus" class="status">イベント一覧を読み込み中…</div>
+        <div id="eventList" class="list"></div>
+      </section>
+    </aside>
+
+    <section class="content">
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">▤</div>
+        <h1>イベントを選択してください</h1>
+        <p>イベント → 話数の順に選択すると、TalkData の会話本文を表示します。</p>
+      </div>
+
+      <div id="storyView" class="story-view hidden">
+        <div class="story-header panel">
+          <button id="backToEvents" class="back-btn">← イベント一覧</button>
+          <div id="storyMeta"></div>
+        </div>
+
+        <div class="episode-tabs panel">
+          <div class="panel-title">エピソード</div>
+          <div id="episodeList" class="episode-list"></div>
+        </div>
+
+        <div id="episodeView" class="episode-view hidden">
+          <div class="episode-header panel">
+            <div>
+              <div id="episodeTitle" class="episode-title">—</div>
+              <div id="episodeSub" class="episode-sub">—</div>
+            </div>
+            <div class="episode-actions">
+              <a id="assetLink" class="small-btn" target="_blank" rel="noopener">.assetを開く</a>
+              <button id="copyAllBtn" class="small-btn">本文をコピー</button>
+            </div>
+          </div>
+
+          <div class="toolbar panel">
+            <label class="check"><input id="showTechnical" type="checkbox"> 技術情報を表示</label>
+            <label class="check"><input id="compactMode" type="checkbox"> コンパクト表示</label>
+            <span id="talkCount" class="toolbar-info">0 TalkData</span>
+          </div>
+
+          <div id="loading" class="panel loading hidden">TalkData を取得中…</div>
+          <div id="error" class="panel error hidden"></div>
+          <div id="talkList" class="talk-list"></div>
+
+          <details id="rawDetails" class="raw panel hidden">
+            <summary>生JSONを表示</summary>
+            <pre id="rawJson"></pre>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>参照元: sekai-world master DB / storage.sekai.best</span>
+    <span id="footerStatus"></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
