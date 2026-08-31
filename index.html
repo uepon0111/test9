@@ -764,66 +764,6 @@
             text-align: left;
         }
 
-        .music-item { position: relative; }
-
-        .offline-save-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 2;
-            width: 38px;
-            height: 38px;
-            min-width: 38px;
-            min-height: 38px;
-            padding: 6px;
-            background: rgba(255,255,255,0.92);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
-            backdrop-filter: blur(4px);
-        }
-
-        .offline-save-btn:hover,
-        .offline-save-btn[aria-pressed="true"] {
-            color: var(--accent-color);
-            border-color: var(--accent-color);
-            background: var(--primary-bg);
-        }
-
-        .offline-save-btn:disabled { cursor: wait; opacity: 0.72; }
-
-        .offline-saved-song-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
-
-        .offline-saved-song-item {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            background: var(--secondary-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-        }
-
-        .offline-saved-song-main { min-width: 0; }
-        .offline-saved-song-title { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .offline-saved-song-meta { margin-top: 2px; color: var(--text-sub); font-size: 11px; }
-        .offline-saved-song-actions { display: flex; gap: 4px; align-items: center; }
-
-        .offline-storage-summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            margin: 12px 0 8px;
-        }
-
-        .offline-storage-value { flex-shrink: 0; font-size: 13px; font-weight: 700; text-align: right; }
-
-        @media (max-width: 600px) {
-            .offline-save-btn { top: 6px; right: 6px; width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
-            .offline-storage-summary { gap: 10px; }
-        }
-
         /* Layout Types */
         .layout-1 { grid-template-columns: 1fr; }
         .layout-1 .music-item {
@@ -1532,6 +1472,30 @@
             gap: 12px;
             min-width: 0;
         }
+
+        .playlist-card.playing {
+            border: 2px solid var(--accent-color);
+            background: rgba(0, 188, 212, 0.06);
+            box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.08), var(--shadow-md);
+        }
+
+        .playlist-playing-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-left: 8px;
+            padding: 2px 7px;
+            border-radius: 12px;
+            background: rgba(0, 188, 212, 0.12);
+            color: var(--accent-color);
+            font-size: 10px;
+            font-weight: 800;
+            vertical-align: middle;
+        }
+
+        .playlist-playing-badge .material-icons-round {
+            font-size: 13px;
+        }
         .playlist-card.default { border-color: var(--accent-color); }
         .playlist-card-main {
             display: flex;
@@ -1991,33 +1955,6 @@
             </section>
 
             <section class="settings-card">
-                <h2>オフライン保存</h2>
-                <p class="settings-help">一覧画面・再生リストの保存ボタンから、楽曲情報と再生に必要な音源を端末に保存できます。</p>
-                <div class="offline-storage-summary">
-                    <div class="setting-row-text">
-                        <span>ページの使用ストレージ</span>
-                        <small id="offline-storage-detail">取得中...</small>
-                    </div>
-                    <div id="offline-storage-value" class="offline-storage-value">取得中...</div>
-                </div>
-                <div class="settings-detail-action">
-                    <div>
-                        <strong>保存した曲</strong>
-                        <small id="offline-saved-count">0曲</small>
-                    </div>
-                    <button type="button" class="secondary-btn" id="offline-refresh-btn"><span class="material-icons-round">refresh</span>更新</button>
-                </div>
-                <div id="offline-saved-song-list" class="offline-saved-song-list"></div>
-                <div class="settings-detail-action">
-                    <div>
-                        <strong>保存データをすべて削除</strong>
-                        <small>保存した曲の情報・音源・ジャケットをCache Storageから削除します。</small>
-                    </div>
-                    <button type="button" class="secondary-btn" id="offline-delete-all-btn"><span class="material-icons-round">delete_sweep</span>すべて削除</button>
-                </div>
-            </section>
-
-            <section class="settings-card">
                 <h2>読み上げ</h2>
                 <div class="setting-row">
                     <div class="setting-row-text">
@@ -2230,19 +2167,6 @@
         const DB_BASE = 'https://sekai-world.github.io/sekai-master-db-diff';
         const ASSET_BASE = 'https://storage.sekai.best/sekai-jp-assets';
 
-        // Offline storage uses Cache Storage for actual resources and a small localStorage manifest.
-        const OFFLINE_CACHE_NAME = 'sekai-music-offline-v1';
-        const OFFLINE_MANIFEST_KEY = 'sekaiMusicOfflineManifest_v1';
-        const OFFLINE_SHELL_CACHE_NAME = 'sekai-music-shell-v1';
-        const OFFLINE_DATA_CACHE_NAME = 'sekai-music-data-v1';
-        const OFFLINE_METADATA_PREFIX = '__sekai_offline__/song/';
-        let offlineSavedSongs = loadOfflineManifest();
-        const offlineSavingIds = new Set();
-        let pAudioSourceToken = 0;
-        let mAudioSourceToken = 0;
-        let pAudioObjectUrl = null;
-        let mAudioObjectUrl = null;
-
         let musics = [], difficulties = [], vocals = [], gameChars = [], outsideChars = [], tags = [], originals = [];
         let diffMap = new Map(), vocalMap = new Map(), tagMap = new Map(), origMap = new Map();
         let gameCharMap = new Map(), outCharMap = new Map();
@@ -2293,6 +2217,7 @@
         let p_draftSortDiff = 'easy';
 
         const PLAYLIST_STORAGE_KEY = 'sekaiMusicPlaylists_v1';
+        const PLAYBACK_SETTINGS_STORAGE_KEY = 'sekaiMusicPlaybackSettings_v1';
         const DEFAULT_PLAYLIST_ID = 'default-all';
         let playlists = [];
         let activePlaylistId = DEFAULT_PLAYLIST_ID;
@@ -2304,8 +2229,11 @@
         let playlistShareMode = 'import';
         let playlistShareTargetId = null;
         let currentPlaylist = [];
-        let isShuffle = false;
-        let repeatMode = 'none'; 
+        let playingPlaylistId = null;
+        let isShuffle = localStorage.getItem(`${PLAYBACK_SETTINGS_STORAGE_KEY}:shuffle`) === 'true';
+        let repeatMode = ['none', 'all', 'one'].includes(localStorage.getItem(`${PLAYBACK_SETTINGS_STORAGE_KEY}:repeat`))
+            ? localStorage.getItem(`${PLAYBACK_SETTINGS_STORAGE_KEY}:repeat`)
+            : 'none';
 
         const pAudio = new Audio();
         pAudio.preload = 'none';
@@ -2654,8 +2582,6 @@
             p_sortKey = playlist.sortKey || 'publishedAt';
             p_sortOrder = playlist.sortOrder === 'asc' ? 'asc' : 'desc';
             p_sortDiff = playlist.sortDiff || 'easy';
-            isShuffle = !!playlist.shuffle;
-            repeatMode = ['none', 'all', 'one'].includes(playlist.repeatMode) ? playlist.repeatMode : 'none';
             syncPlayerDraftFromActive();
             syncPlayerPanelUI();
             updateRepeatShuffleUI();
@@ -2674,14 +2600,18 @@
             playlist.sortKey = p_sortKey;
             playlist.sortOrder = p_sortOrder;
             playlist.sortDiff = p_sortDiff;
-            playlist.shuffle = !!isShuffle;
-            playlist.repeatMode = repeatMode;
             if (playlist.default) playlist.songIds = musics.map(m => String(m.id));
             savePlaylists();
         }
 
-        function updateActivePlaylistSongPool() {
-            const playlist = getActivePlaylist();
+        function saveGlobalPlaybackSettings() {
+            try {
+                localStorage.setItem(`${PLAYBACK_SETTINGS_STORAGE_KEY}:shuffle`, String(!!isShuffle));
+                localStorage.setItem(`${PLAYBACK_SETTINGS_STORAGE_KEY}:repeat`, repeatMode);
+            } catch (e) {}
+        }
+
+        function getPlaylistSongPool(playlist) {
             if (!playlist) return [];
             if (playlist.default) {
                 playlist.songIds = musics.map(m => String(m.id));
@@ -2689,6 +2619,37 @@
             }
             const idSet = new Set((playlist.songIds || []).map(String));
             return musics.filter(m => idSet.has(String(m.id)));
+        }
+
+        function updateActivePlaylistSongPool() {
+            return getPlaylistSongPool(getActivePlaylist());
+        }
+
+        function getPlaylistTrackList(playlist) {
+            if (!playlist) return [];
+            const pool = getPlaylistSongPool(playlist);
+            const poolIds = new Set(pool.map(m => m.id));
+            return getFilteredAndSortedList(
+                playlist.searchTerm || '',
+                playlist.searchOperator || 'and',
+                new Set(playlist.activeTag || []),
+                playlist.activeWritten || 'all',
+                new Set(playlist.selectedChars || []),
+                playlist.sortKey || 'publishedAt',
+                playlist.sortOrder === 'asc' ? 'asc' : 'desc',
+                playlist.sortDiff || 'easy',
+                playlist.publishedFrom || '',
+                playlist.publishedTo || ''
+            ).filter(m => poolIds.has(m.id));
+        }
+
+        function getPlayingPlaylist() {
+            if (!playingPlaylistId) return null;
+            return playlists.find(p => p.id === playingPlaylistId) || null;
+        }
+
+        function getPlayingPlaylistTrackList() {
+            return getPlaylistTrackList(getPlayingPlaylist());
         }
 
         function showPlaylistSelectionView() {
@@ -2703,6 +2664,7 @@
             if (playerOnlyControls) playerOnlyControls.style.display = 'none';
             if (layout) layout.style.display = 'none';
             renderPlaylistSelection();
+            updateMiniPlayerVisibility();
         }
 
         function showActivePlaylistView() {
@@ -2711,28 +2673,37 @@
                 showPlaylistSelectionView();
                 return;
             }
+
             applyPlaylistSettingsToPlayer(playlist);
+
             const selectView = document.getElementById('playlist-select-view');
             const activeView = document.getElementById('playlist-active-view');
             const layout = document.querySelector('#player-view-container .player-layout');
             const title = document.getElementById('active-playlist-title');
+
             if (selectView) selectView.style.display = 'none';
             if (activeView) activeView.style.display = 'block';
             if (layout) layout.style.display = 'flex';
             if (title) title.textContent = playlist.name;
+
             const playerOnlyControls = document.getElementById('player-only-controls');
             if (playerOnlyControls) playerOnlyControls.style.display = 'flex';
+
             const addSongsBtn = document.getElementById('player-add-songs-btn');
             if (addSongsBtn) addSongsBtn.style.display = playlist.default ? 'none' : 'inline-flex';
+
             renderPlayerList();
-            if (pCurrentMusic && !currentPlaylist.some(m => m.id === pCurrentMusic.id)) {
-                pAudio.pause();
-                pCurrentMusic = null;
-                pCurrentVocal = null;
-                cancelPlayerSpeech();
+
+            // 別の再生リストを閲覧している間は、メインプレイヤーを「未選択」にする。
+            // 実際の再生状態(pCurrentMusic / playingPlaylistId)は保持し、ミニプレイヤーから復帰できるようにする。
+            if (activePlaylistId === playingPlaylistId && pCurrentMusic) {
+                updatePlayerPageInfo();
+            } else {
                 updatePlayerPageInfo();
             }
+
             updateRepeatShuffleUI();
+            updateMiniPlayerVisibility();
         }
 
         function renderPlaylistSelection() {
@@ -2741,7 +2712,8 @@
             grid.innerHTML = '';
             playlists.forEach(playlist => {
                 const card = document.createElement('section');
-                card.className = `playlist-card${playlist.default ? ' default' : ''}`;
+                const isPlaying = playlist.id === playingPlaylistId;
+                card.className = `playlist-card${playlist.default ? ' default' : ''}${isPlaying ? ' playing' : ''}`;
 
                 const main = document.createElement('div');
                 main.className = 'playlist-card-main';
@@ -2757,6 +2729,12 @@
                 meta.className = 'playlist-card-meta';
                 const songCount = playlist.default ? musics.length : playlist.songIds.length;
                 meta.textContent = `${songCount}曲${playlist.default ? '・削除不可' : ''}`;
+                if (isPlaying) {
+                    const playingBadge = document.createElement('span');
+                    playingBadge.className = 'playlist-playing-badge';
+                    playingBadge.innerHTML = '<span class="material-icons-round">volume_up</span>再生中';
+                    meta.appendChild(playingBadge);
+                }
                 text.append(title, meta);
                 main.append(icon, text);
 
@@ -3151,370 +3129,6 @@
         let pSpeechAnnouncePending = false;
         let pSpeechAnnouncedForCurrentTrack = false;
 
-        function loadOfflineManifest() {
-            try {
-                const raw = localStorage.getItem(OFFLINE_MANIFEST_KEY);
-                if (!raw) return {};
-                const parsed = JSON.parse(raw);
-                if (!parsed || typeof parsed !== 'object' || parsed.version !== 1 || !parsed.songs || typeof parsed.songs !== 'object') return {};
-                const result = {};
-                Object.entries(parsed.songs).forEach(([id, record]) => {
-                    if (!record || typeof record !== 'object') return;
-                    const normalizedId = String(id);
-                    result[normalizedId] = {
-                        id: normalizedId,
-                        title: String(record.title || normalizedId),
-                        savedAt: Number(record.savedAt) || 0,
-                        sizeBytes: Math.max(0, Number(record.sizeBytes) || 0),
-                        vocalCount: Math.max(0, Number(record.vocalCount) || 0),
-                        resources: Array.isArray(record.resources) ? [...new Set(record.resources.map(String).filter(Boolean))] : []
-                    };
-                });
-                return result;
-            } catch (e) { return {}; }
-        }
-
-        function saveOfflineManifest() {
-            try {
-                localStorage.setItem(OFFLINE_MANIFEST_KEY, JSON.stringify({ version: 1, songs: offlineSavedSongs }));
-                return true;
-            } catch (e) {
-                console.error('Offline manifest save failed:', e);
-                return false;
-            }
-        }
-
-        function getOfflineRecord(musicId) { return offlineSavedSongs[String(musicId)] || null; }
-
-        function formatStorageBytes(bytes) {
-            const value = Math.max(0, Number(bytes) || 0);
-            if (value < 1024) return `${Math.round(value)} B`;
-            if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
-            if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-            return `${(value / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-        }
-
-        function getOfflineMetadataKey(musicId) {
-            return new URL(`${OFFLINE_METADATA_PREFIX}${encodeURIComponent(String(musicId))}.json`, window.location.href).toString();
-        }
-
-        async function getOfflineCache() {
-            if (!('caches' in window)) throw new Error('Cache Storage is not supported in this browser.');
-            return caches.open(OFFLINE_CACHE_NAME);
-        }
-
-        function createOfflineSaveButton(music) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'icon-btn offline-save-btn';
-            button.dataset.songId = String(music.id);
-            button.addEventListener('click', event => {
-                event.preventDefault();
-                event.stopPropagation();
-                toggleOfflineSong(music);
-            });
-            updateOfflineSaveButton(button, music.id);
-            return button;
-        }
-
-        function updateOfflineSaveButton(button, musicId) {
-            if (!button) return;
-            const id = String(musicId);
-            const isSaving = offlineSavingIds.has(id);
-            const isSaved = !!getOfflineRecord(id);
-            button.disabled = isSaving;
-            button.setAttribute('aria-pressed', isSaved ? 'true' : 'false');
-            button.title = isSaving ? 'オフライン保存中...' : isSaved ? 'オフライン保存を削除' : 'オフライン保存';
-            button.setAttribute('aria-label', button.title);
-            button.innerHTML = `<span class="material-icons-round">${isSaving ? 'downloading' : isSaved ? 'offline_pin' : 'download'}</span>`;
-        }
-
-        function updateOfflineSaveButtons(musicId = null) {
-            document.querySelectorAll('.offline-save-btn[data-song-id]').forEach(button => {
-                if (musicId === null || String(button.dataset.songId) === String(musicId)) updateOfflineSaveButton(button, button.dataset.songId);
-            });
-        }
-
-        async function fetchAndCacheOfflineResource(cache, url) {
-            const response = await fetch(url, { cache: 'no-store' });
-            if (!response.ok && response.type !== 'opaque') throw new Error(`Failed to fetch offline resource: ${url}`);
-            const sizeResponse = response.clone();
-            await cache.put(url, response.clone());
-            const blob = await sizeResponse.blob();
-            return blob.size;
-        }
-
-        async function saveSongOffline(music) {
-            const id = String(music?.id ?? '');
-            if (!music || !id) throw new Error('楽曲情報がありません。');
-            if (getOfflineRecord(id) || offlineSavingIds.has(id)) return;
-
-            offlineSavingIds.add(id);
-            updateOfflineSaveButtons(id);
-            try {
-                const cache = await getOfflineCache();
-                const mVocals = [...(vocalMap.get(music.id) || vocalMap.get(id) || vocalMap.get(Number(id)) || [])];
-                if (mVocals.length === 0) throw new Error('保存できる音源がありません。');
-
-                const metadataKey = getOfflineMetadataKey(id);
-                const jacketUrl = getJacketUrl(music.id);
-                const resources = [jacketUrl];
-                let sizeBytes = 0;
-
-                await cache.put(metadataKey, new Response(JSON.stringify({ version: 1, musicId: id, music, savedAt: Date.now(), vocalCount: 0, resources: [] }), {
-                    headers: { 'Content-Type': 'application/json; charset=utf-8' }
-                }));
-
-                try {
-                    sizeBytes += await fetchAndCacheOfflineResource(cache, jacketUrl);
-                    for (const vocal of mVocals) {
-                        const audioUrl = getAudioBaseUrl(vocal);
-                        resources.push(audioUrl);
-                        sizeBytes += await fetchAndCacheOfflineResource(cache, audioUrl);
-                    }
-
-                    const savedAt = Date.now();
-                    const normalizedResources = [...new Set(resources)];
-                    const metadata = { version: 1, musicId: id, music, savedAt, vocalCount: mVocals.length, resources: normalizedResources };
-                    sizeBytes += new Blob([JSON.stringify(metadata)]).size;
-                    await cache.put(metadataKey, new Response(JSON.stringify(metadata), { headers: { 'Content-Type': 'application/json; charset=utf-8' } }));
-
-                    offlineSavedSongs[id] = { id, title: String(music.title || `楽曲 ${id}`), savedAt, sizeBytes, vocalCount: mVocals.length, resources: normalizedResources };
-                    if (!saveOfflineManifest()) throw new Error('保存情報の書き込みに失敗しました。');
-                    renderList();
-                    renderPlayerList();
-                    renderOfflineSettings();
-                } catch (error) {
-                    delete offlineSavedSongs[id];
-                    saveOfflineManifest();
-                    await cache.delete(metadataKey).catch(() => {});
-                    for (const resourceUrl of [...new Set(resources)]) await cache.delete(resourceUrl).catch(() => {});
-                    throw error;
-                }
-            } finally {
-                offlineSavingIds.delete(id);
-                updateOfflineSaveButtons(id);
-                refreshOfflineStorageUsage();
-            }
-        }
-
-        async function deleteOfflineSong(musicId, options = {}) {
-            const id = String(musicId);
-            const record = getOfflineRecord(id);
-            const cache = await getOfflineCache();
-            const metadataKey = getOfflineMetadataKey(id);
-            let resources = Array.isArray(record?.resources) ? [...record.resources] : [];
-
-            const metadataResponse = await cache.match(metadataKey);
-            if (metadataResponse) {
-                try {
-                    const metadata = await metadataResponse.json();
-                    if (Array.isArray(metadata.resources)) resources.push(...metadata.resources.map(String));
-                } catch (e) {}
-            }
-
-            resources.push(getJacketUrl(id));
-            const possibleVocals = vocalMap.get(id) || vocalMap.get(Number(id)) || [];
-            possibleVocals.forEach(vocal => resources.push(getAudioBaseUrl(vocal)));
-            for (const resourceUrl of [...new Set(resources.filter(Boolean))]) await cache.delete(resourceUrl);
-            await cache.delete(metadataKey);
-
-            delete offlineSavedSongs[id];
-            if (!saveOfflineManifest()) throw new Error('保存情報の削除に失敗しました。');
-
-            if (String(pCurrentMusic?.id) === id) stopOfflineDeletedAudio(true);
-            if (String(mCurrentMusic?.id) === id) stopOfflineDeletedAudio(false);
-
-            updateOfflineSaveButtons(id);
-            renderOfflineSettings();
-            if (!options.silent) { renderList(); renderPlayerList(); }
-            await refreshOfflineStorageUsage();
-        }
-
-        function stopOfflineDeletedAudio(isMainPlayer) {
-            const audio = isMainPlayer ? pAudio : mAudio;
-            try { audio.pause(); } catch (e) {}
-            try { audio.removeAttribute('src'); audio.load(); } catch (e) {}
-            revokeAudioObjectUrl(isMainPlayer);
-            if (isMainPlayer) ++pAudioSourceToken; else ++mAudioSourceToken;
-            if (isMainPlayer) syncPlayerUI(); else syncModalUI();
-        }
-
-        async function toggleOfflineSong(music) {
-            const id = String(music?.id ?? '');
-            if (!id || offlineSavingIds.has(id)) return;
-            if (getOfflineRecord(id)) {
-                if (!confirm(`「${music.title || id}」のオフライン保存を削除しますか？`)) return;
-                try { await deleteOfflineSong(id); } catch (error) { console.error('Offline song delete failed:', error); alert('オフライン保存の削除に失敗しました。'); }
-                return;
-            }
-            try {
-                await saveSongOffline(music);
-                alert(`「${music.title || id}」をオフライン保存しました。`);
-            } catch (error) {
-                console.error('Offline song save failed:', error);
-                alert(error?.name === 'QuotaExceededError' ? '端末の保存容量が不足しています。不要な保存曲を削除してください。' : 'オフライン保存に失敗しました。通信状態と保存容量を確認してください。');
-                renderOfflineSettings();
-            }
-        }
-
-        async function reconcileOfflineManifest() {
-            if (!Object.keys(offlineSavedSongs).length || !('caches' in window)) return;
-            try {
-                const cache = await getOfflineCache();
-                let changed = false;
-                for (const id of Object.keys(offlineSavedSongs)) {
-                    const metadataResponse = await cache.match(getOfflineMetadataKey(id));
-                    if (!metadataResponse) {
-                        delete offlineSavedSongs[id];
-                        changed = true;
-                        continue;
-                    }
-                    let resources = offlineSavedSongs[id].resources || [];
-                    try {
-                        const metadata = await metadataResponse.clone().json();
-                        resources = Array.isArray(metadata.resources) ? metadata.resources.map(String).filter(Boolean) : resources;
-                    } catch (e) {}
-                    const checks = [getJacketUrl(id), ...resources];
-                    let missing = false;
-                    for (const url of [...new Set(checks.filter(Boolean))]) {
-                        if (!await cache.match(url)) { missing = true; break; }
-                    }
-                    if (missing) {
-                        delete offlineSavedSongs[id];
-                        changed = true;
-                    }
-                }
-                if (changed) saveOfflineManifest();
-            } catch (e) {
-                console.warn('Offline manifest reconciliation failed:', e);
-            }
-        }
-
-        async function renderOfflineSettings() {
-            const list = document.getElementById('offline-saved-song-list');
-            const count = document.getElementById('offline-saved-count');
-            const clearAll = document.getElementById('offline-delete-all-btn');
-            if (!list || !count) return;
-
-            const entries = Object.values(offlineSavedSongs).sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
-            count.textContent = `${entries.length}曲`;
-            if (clearAll) clearAll.disabled = entries.length === 0;
-            list.innerHTML = '';
-
-            if (entries.length === 0) {
-                const empty = document.createElement('p');
-                empty.className = 'settings-help';
-                empty.textContent = 'まだオフライン保存された曲はありません。';
-                list.appendChild(empty);
-            } else {
-                entries.forEach(record => {
-                    const row = document.createElement('div');
-                    row.className = 'offline-saved-song-item';
-                    const main = document.createElement('div');
-                    main.className = 'offline-saved-song-main';
-                    const title = document.createElement('div');
-                    title.className = 'offline-saved-song-title';
-                    title.textContent = record.title;
-                    title.title = record.title;
-                    const meta = document.createElement('div');
-                    meta.className = 'offline-saved-song-meta';
-                    meta.textContent = `${formatStorageBytes(record.sizeBytes)} / ${record.vocalCount || 0}ボーカル / ${record.savedAt ? new Date(record.savedAt).toLocaleString('ja-JP') : '保存日時不明'}`;
-                    main.append(title, meta);
-                    const actions = document.createElement('div');
-                    actions.className = 'offline-saved-song-actions';
-                    const del = document.createElement('button');
-                    del.type = 'button';
-                    del.className = 'icon-btn';
-                    del.title = 'オフライン保存を削除';
-                    del.setAttribute('aria-label', `${record.title}のオフライン保存を削除`);
-                    del.innerHTML = '<span class="material-icons-round">delete</span>';
-                    del.addEventListener('click', async () => {
-                        if (!confirm(`「${record.title}」のオフライン保存を削除しますか？`)) return;
-                        del.disabled = true;
-                        try { await deleteOfflineSong(record.id); } catch (error) { console.error('Offline song delete failed:', error); alert('オフライン保存の削除に失敗しました。'); del.disabled = false; }
-                    });
-                    actions.appendChild(del);
-                    row.append(main, actions);
-                    list.appendChild(row);
-                });
-            }
-            await refreshOfflineStorageUsage();
-        }
-
-        async function refreshOfflineStorageUsage() {
-            const valueEl = document.getElementById('offline-storage-value');
-            const detailEl = document.getElementById('offline-storage-detail');
-            if (!valueEl || !detailEl) return;
-            const manifestBytes = Object.values(offlineSavedSongs).reduce((sum, record) => sum + (Number(record.sizeBytes) || 0), 0);
-            if (navigator.storage?.estimate) {
-                try {
-                    const estimate = await navigator.storage.estimate();
-                    const usage = Number(estimate.usage) || 0;
-                    const quota = Number(estimate.quota) || 0;
-                    valueEl.textContent = quota ? `${formatStorageBytes(usage)} / ${formatStorageBytes(quota)}` : formatStorageBytes(usage);
-                    detailEl.textContent = quota ? `このページ（同一オリジン）が使用中の容量 / 上限。保存曲の記録値は約${formatStorageBytes(manifestBytes)}です。` : `このページ（同一オリジン）の使用量。保存曲の記録値は約${formatStorageBytes(manifestBytes)}です。`;
-                    return;
-                } catch (e) {}
-            }
-            valueEl.textContent = formatStorageBytes(manifestBytes);
-            detailEl.textContent = 'ブラウザから総使用量を取得できないため、保存曲の記録値を表示しています。';
-        }
-
-        async function deleteAllOfflineSongs() {
-            const entries = Object.values(offlineSavedSongs);
-            if (!entries.length) return;
-            if (!confirm(`オフライン保存した${entries.length}曲をすべて削除しますか？`)) return;
-            const ids = entries.map(record => record.id);
-            try {
-                for (const id of ids) await deleteOfflineSong(id, { silent: true });
-                renderList();
-                renderPlayerList();
-                await renderOfflineSettings();
-            } catch (error) {
-                console.error('Delete all offline songs failed:', error);
-                alert('オフライン保存の全削除に失敗しました。');
-                renderOfflineSettings();
-            }
-        }
-
-        async function fetchJsonWithOfflineCache(url) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
-                if ('caches' in window) {
-                    try {
-                        const dataCache = await caches.open(OFFLINE_DATA_CACHE_NAME);
-                        await dataCache.put(url, response.clone());
-                    } catch (cacheError) { console.warn('Offline JSON cache failed:', cacheError); }
-                }
-                return response.json();
-            } catch (networkError) {
-                if ('caches' in window) {
-                    try {
-                        const dataCache = await caches.open(OFFLINE_DATA_CACHE_NAME);
-                        const cached = await dataCache.match(url);
-                        if (cached) return cached.json();
-                    } catch (cacheError) { console.warn('Offline JSON fallback failed:', cacheError); }
-                }
-                throw networkError;
-            }
-        }
-
-        async function cacheCurrentPageForOffline() {
-            if (!('caches' in window) || window.location.protocol === 'file:') return;
-            try {
-                const shellCache = await caches.open(OFFLINE_SHELL_CACHE_NAME);
-                const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-                await shellCache.put(window.location.href, new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
-            } catch (e) { console.warn('Offline page cache failed:', e); }
-        }
-
-        function registerOfflineServiceWorker() {
-            if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-            navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(error => console.warn('Offline service worker registration failed:', error));
-        }
-
         const TAG_DEF = [
             { id: 'all', icon: 'apps', label: '全て' },
             { id: 'vocaloid', icon: 'mic', label: 'バチャシン' },
@@ -3578,7 +3192,7 @@
 
         function toggleShuffle() {
             isShuffle = !isShuffle;
-            saveActivePlaylistPlayerSettings();
+            saveGlobalPlaybackSettings();
             updateRepeatShuffleUI();
         }
 
@@ -3590,21 +3204,20 @@
             } else {
                 repeatMode = 'all';
             }
-            saveActivePlaylistPlayerSettings();
+            saveGlobalPlaybackSettings();
             updateRepeatShuffleUI();
         }
 
         async function init() {
-            registerOfflineServiceWorker();
             try {
                 const results = await Promise.all([
-                    fetchJsonWithOfflineCache(`${DB_BASE}/musics.json`),
-                    fetchJsonWithOfflineCache(`${DB_BASE}/musicDifficulties.json`),
-                    fetchJsonWithOfflineCache(`${DB_BASE}/musicVocals.json`),
-                    fetchJsonWithOfflineCache(`${DB_BASE}/gameCharacters.json`),
-                    fetchJsonWithOfflineCache(`${DB_BASE}/outsideCharacters.json`),
-                    fetchJsonWithOfflineCache(`${DB_BASE}/musicTags.json`),
-                    fetchJsonWithOfflineCache(`${DB_BASE}/musicOriginals.json`)
+                    fetch(`${DB_BASE}/musics.json`).then(r => r.json()),
+                    fetch(`${DB_BASE}/musicDifficulties.json`).then(r => r.json()),
+                    fetch(`${DB_BASE}/musicVocals.json`).then(r => r.json()),
+                    fetch(`${DB_BASE}/gameCharacters.json`).then(r => r.json()),
+                    fetch(`${DB_BASE}/outsideCharacters.json`).then(r => r.json()),
+                    fetch(`${DB_BASE}/musicTags.json`).then(r => r.json()),
+                    fetch(`${DB_BASE}/musicOriginals.json`).then(r => r.json())
                 ]);
 
                 [musics, difficulties, vocals, gameChars, outsideChars, tags, originals] = results;
@@ -3625,17 +3238,15 @@
                 gameChars.forEach(c => gameCharMap.set(c.id, c));
                 outsideChars.forEach(c => outCharMap.set(c.id, c));
 
-                await reconcileOfflineManifest();
                 loadPlaylists();
                 activePlaylistId = DEFAULT_PLAYLIST_ID;
+                saveGlobalPlaybackSettings();
 
                 setupUI();
                 setupPlayerUI();
                 updateRepeatShuffleUI();
                 renderList();
                 renderPlayerList();
-                renderOfflineSettings();
-                cacheCurrentPageForOffline();
                 document.getElementById('loading').style.display = 'none';
             } catch (err) {
                 console.error(err);
@@ -4333,6 +3944,7 @@
                 syncListPanelUI();
             });
 
+            const miniPlayer = document.getElementById('mini-player');
             const miniInfoArea = document.getElementById('mini-info-area');
             const miniPrev = document.getElementById('mini-btn-prev');
             const miniBack10 = document.getElementById('mini-btn-back-10');
@@ -4340,9 +3952,20 @@
             const miniForward10 = document.getElementById('mini-btn-forward-10');
             const miniNext = document.getElementById('mini-next-btn');
 
-            if (miniInfoArea) {
-                miniInfoArea.addEventListener('click', () => {
+            if (miniPlayer) {
+                miniPlayer.addEventListener('click', (e) => {
+                    if (e.target.closest('.mini-controls')) return;
+                    if (!playingPlaylistId) return;
+                    activePlaylistId = playingPlaylistId;
                     btnViewPlayer.click();
+                    showActivePlaylistView();
+                });
+            } else if (miniInfoArea) {
+                miniInfoArea.addEventListener('click', () => {
+                    if (!playingPlaylistId) return;
+                    activePlaylistId = playingPlaylistId;
+                    btnViewPlayer.click();
+                    showActivePlaylistView();
                 });
             }
             if (miniPrev) miniPrev.addEventListener('click', (e) => { e.stopPropagation(); playPrev(); });
@@ -4374,7 +3997,6 @@
                 document.getElementById('p-filter-panel').classList.remove('show');
                 updateMiniPlayerVisibility();
                 updateSpeechSettingsUI();
-                renderOfflineSettings();
                 syncMenuActive('settings');
                 window.scrollTo({ top: 0, behavior: 'auto' });
                 closeSideMenu();
@@ -4389,7 +4011,6 @@
                 playerOnlyControls.style.display = 'none';
                 updateMiniPlayerVisibility();
                 updateSpeechSettingsUI();
-                renderOfflineSettings();
                 syncMenuActive('settings');
                 window.scrollTo({ top: 0, behavior: 'auto' });
                 closeSideMenu();
@@ -4440,13 +4061,7 @@
                 });
             }
 
-            const offlineRefreshBtn = document.getElementById('offline-refresh-btn');
-            if (offlineRefreshBtn) offlineRefreshBtn.addEventListener('click', () => renderOfflineSettings());
-            const offlineDeleteAllBtn = document.getElementById('offline-delete-all-btn');
-            if (offlineDeleteAllBtn) offlineDeleteAllBtn.addEventListener('click', deleteAllOfflineSongs);
-
             updateSpeechSettingsUI();
-            renderOfflineSettings();
 
             const enabledToggle = document.getElementById('speech-enabled-toggle');
             if (enabledToggle) {
@@ -4683,9 +4298,23 @@
             const miniPlayer = document.getElementById('mini-player');
             const mainEl = document.querySelector('main');
             const listVisible = document.getElementById('list-view-container')?.style.display !== 'none';
+            const playerViewVisible = document.getElementById('player-view-container')?.style.display !== 'none';
+            const playerActiveViewVisible = document.getElementById('playlist-active-view')?.style.display !== 'none';
             const settingsVisible = document.getElementById('settings-view-container')?.style.display !== 'none';
             const speechSettingsVisible = document.getElementById('speech-settings-view-container')?.style.display !== 'none';
-            const shouldShow = !!pCurrentMusic && (listVisible || settingsVisible || speechSettingsVisible);
+
+            const viewingPlayingPlaylist = playerViewVisible &&
+                playerActiveViewVisible &&
+                !!playingPlaylistId &&
+                activePlaylistId === playingPlaylistId;
+
+            const shouldShow = !!pCurrentMusic && (
+                listVisible ||
+                settingsVisible ||
+                speechSettingsVisible ||
+                (playerViewVisible && !viewingPlayingPlaylist)
+            );
+
             if (shouldShow) {
                 miniPlayer.classList.add('show');
                 mainEl.classList.add('with-mini-player');
@@ -4696,7 +4325,7 @@
             }
         }
 
-        
+
         function getFilteredAndSortedList(search, searchMode = 'and', aTag, aWritten, sChars, sKey, sOrder, sDiff, publishedFromValue = '', publishedToValue = '') {
             const fromTime = publishedFromValue ? new Date(`${publishedFromValue}T00:00:00`).getTime() : null;
             const toTime = publishedToValue ? new Date(`${publishedToValue}T23:59:59.999`).getTime() : null;
@@ -4788,30 +4417,27 @@
                         <div class="meta" title="${meta.text}">${meta.html}</div>
                     </div>
                 `;
-                el.appendChild(createOfflineSaveButton(m));
                 fragment.appendChild(el);
             });
             container.appendChild(fragment);
         }
 
         function renderPlayerList() {
-            const pool = updateActivePlaylistSongPool();
-            const poolIds = new Set(pool.map(m => m.id));
-            currentPlaylist = getFilteredAndSortedList(p_searchTerm, p_searchOperator, p_activeTag, p_activeWritten, p_selectedChars, p_sortKey, p_sortOrder, p_sortDiff, p_publishedFrom, p_publishedTo)
-                .filter(m => poolIds.has(m.id));
+            currentPlaylist = getPlaylistTrackList(getActivePlaylist());
             const container = document.getElementById('player-music-list');
             if (!container) return;
             container.innerHTML = '';
 
+            const isCurrentPlayingPlaylist = activePlaylistId === playingPlaylistId;
             const fragment = document.createDocumentFragment();
             currentPlaylist.forEach(m => {
                 const el = document.createElement('div');
                 el.className = 'music-item';
-                if (pCurrentMusic && pCurrentMusic.id === m.id) el.classList.add('playing');
+                if (isCurrentPlayingPlaylist && pCurrentMusic && pCurrentMusic.id === m.id) el.classList.add('playing');
                 el.onclick = () => {
                     const mVocals = vocalMap.get(m.id) || [];
                     const vocal = getDefaultVocal(m, mVocals);
-                    loadPlayerAudio(m, vocal, true);
+                    loadPlayerAudio(m, vocal, true, activePlaylistId);
                 };
 
                 const meta = getMeta(m, p_sortKey, p_sortDiff);
@@ -4822,7 +4448,6 @@
                         <div class="meta" title="${meta.text}">${meta.html}</div>
                     </div>
                 `;
-                el.appendChild(createOfflineSaveButton(m));
                 fragment.appendChild(el);
             });
             container.appendChild(fragment);
@@ -4895,7 +4520,7 @@
                     if (isModal) {
                         loadModalAudio(music, v, false);
                     } else {
-                        loadPlayerAudio(music, v, true);
+                        loadPlayerAudio(music, v, true, activePlaylistId);
                     }
                 };
                 container.appendChild(btn);
@@ -5045,126 +4670,121 @@
 
         document.getElementById('btn-close-modal').addEventListener('click', () => {
             document.getElementById('detail-modal').classList.remove('show');
-            ++mAudioSourceToken;
             mAudio.pause();
             mIsSeeking = false;
             try { mAudio.currentTime = 0; } catch (e) {}
-            revokeAudioObjectUrl(false);
             syncModalUI();
         });
 
-        window.addEventListener('pagehide', () => {
-            revokeAudioObjectUrl(true);
-            revokeAudioObjectUrl(false);
-        });
-
         function updatePlayerPageInfo() {
-            if (!pCurrentMusic) return;
             const pJacket = document.getElementById('p-jacket');
             const pTitle = document.getElementById('p-title');
-            const pVocalInfo = document.getElementById('p-vocal-info'); 
-            
-            pJacket.src = getJacketUrl(pCurrentMusic.id);
-            pTitle.textContent = pCurrentMusic.title;
-            pTitle.title = pCurrentMusic.title;
-
+            const pVocalInfo = document.getElementById('p-vocal-info');
             const pCredits = document.getElementById('p-credits');
-            pCredits.style.display = 'block';
-            document.getElementById('p-credit-lyricist').textContent = `作詞: ${pCurrentMusic.lyricist || '-'}`;
-            document.getElementById('p-credit-composer').textContent = `作曲: ${pCurrentMusic.composer || '-'}`;
-            document.getElementById('p-credit-arranger').textContent = `編曲: ${pCurrentMusic.arranger || '-'}`;
+            const hasPlayerSelection = !!pCurrentMusic && activePlaylistId === playingPlaylistId;
 
-            let finalVocalName = '';
-
-            if (pCurrentVocal) {
-                pVocalInfo.style.display = 'inline-flex';
-                pVocalInfo.innerHTML = '';
-                
-                const iconsContainer = document.createElement('div');
-                iconsContainer.className = 'vocal-btn-icons';
-                
-                let vocalNames = [];
-                (pCurrentVocal.characters || []).forEach(c => {
-                    if (c.characterType === 'game_character') {
-                        const gc = gameCharMap.get(c.characterId);
-                        if (gc) vocalNames.push(`${gc.firstName || ''}${gc.givenName || ''}`);
-                        
-                        const cImg = document.createElement('img');
-                        cImg.src = `${ASSET_BASE}/character/character_sd_l/chr_sp_${c.characterId}.png`;
-                        cImg.onerror = function() {
-                            if (!this.dataset.retried) {
-                                this.dataset.retried = 'true';
-                                const url = new URL(this.src, window.location.href);
-                                url.searchParams.set('t', Date.now());
-                                this.src = url.toString();
-                            } else {
-                                this.style.display = 'none';
-                            }
-                        };
-                        iconsContainer.appendChild(cImg);
-                    } else {
-                        const oc = outCharMap.get(c.characterId);
-                        if (oc) vocalNames.push(oc.name);
-                    }
-                });
-
-                finalVocalName = pCurrentVocal.displayName || vocalNames.join(', ') || 'Unknown Vocal';
-                const labelSpan = document.createElement('span');
-                labelSpan.textContent = finalVocalName;
-                labelSpan.title = finalVocalName;
-                
-                pVocalInfo.appendChild(iconsContainer);
-                pVocalInfo.appendChild(labelSpan);
+            if (!hasPlayerSelection) {
+                if (pJacket) pJacket.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+                if (pTitle) {
+                    pTitle.textContent = '選択されていません';
+                    pTitle.title = '';
+                }
+                if (pCredits) pCredits.style.display = 'none';
+                if (pVocalInfo) {
+                    pVocalInfo.style.display = 'none';
+                    pVocalInfo.innerHTML = '';
+                }
             } else {
-                pVocalInfo.style.display = 'none';
+                pJacket.src = getJacketUrl(pCurrentMusic.id);
+                pTitle.textContent = pCurrentMusic.title;
+                pTitle.title = pCurrentMusic.title;
+
+                pCredits.style.display = 'block';
+                document.getElementById('p-credit-lyricist').textContent = `作詞: ${pCurrentMusic.lyricist || '-'}`;
+                document.getElementById('p-credit-composer').textContent = `作曲: ${pCurrentMusic.composer || '-'}`;
+                document.getElementById('p-credit-arranger').textContent = `編曲: ${pCurrentMusic.arranger || '-'}`;
+
+                if (pCurrentVocal) {
+                    pVocalInfo.style.display = 'inline-flex';
+                    pVocalInfo.innerHTML = '';
+
+                    const iconsContainer = document.createElement('div');
+                    iconsContainer.className = 'vocal-btn-icons';
+
+                    const vocalNames = [];
+                    (pCurrentVocal.characters || []).forEach(c => {
+                        if (c.characterType === 'game_character') {
+                            const gc = gameCharMap.get(c.characterId);
+                            if (gc) vocalNames.push(`${gc.firstName || ''}${gc.givenName || ''}`);
+
+                            const cImg = document.createElement('img');
+                            cImg.src = `${ASSET_BASE}/character/character_sd_l/chr_sp_${c.characterId}.png`;
+                            cImg.onerror = function() {
+                                if (!this.dataset.retried) {
+                                    this.dataset.retried = 'true';
+                                    const url = new URL(this.src, window.location.href);
+                                    url.searchParams.set('t', Date.now());
+                                    this.src = url.toString();
+                                } else {
+                                    this.style.display = 'none';
+                                }
+                            };
+                            iconsContainer.appendChild(cImg);
+                        } else {
+                            const oc = outCharMap.get(c.characterId);
+                            if (oc) vocalNames.push(oc.name);
+                        }
+                    });
+
+                    const finalVocalName = pCurrentVocal.displayName || vocalNames.join(', ') || 'Unknown Vocal';
+                    const labelSpan = document.createElement('span');
+                    labelSpan.textContent = finalVocalName;
+                    labelSpan.title = finalVocalName;
+
+                    pVocalInfo.appendChild(iconsContainer);
+                    pVocalInfo.appendChild(labelSpan);
+                } else {
+                    pVocalInfo.style.display = 'none';
+                    pVocalInfo.innerHTML = '';
+                }
             }
-            
-            const mJacket = document.getElementById('mini-jacket');
-            const mTitle = document.getElementById('mini-title');
-            const mVocal = document.getElementById('mini-vocal');
-            if(mJacket) mJacket.src = getJacketUrl(pCurrentMusic.id);
-            if(mTitle) mTitle.innerHTML = `<span class="scroll-text">${pCurrentMusic.title}</span>`;
-            if(mVocal) mVocal.innerHTML = `<span class="scroll-text">${finalVocalName}</span>`;
-            
+
+            // ミニプレイヤーは、現在実際に再生中の曲を常に表示する。
+            if (pCurrentMusic) {
+                let finalVocalName = '';
+                if (pCurrentVocal) {
+                    const vocalNames = [];
+                    (pCurrentVocal.characters || []).forEach(c => {
+                        if (c.characterType === 'game_character') {
+                            const gc = gameCharMap.get(c.characterId);
+                            if (gc) vocalNames.push(`${gc.firstName || ''}${gc.givenName || ''}`);
+                        } else {
+                            const oc = outCharMap.get(c.characterId);
+                            if (oc) vocalNames.push(oc.name);
+                        }
+                    });
+                    finalVocalName = pCurrentVocal.displayName || vocalNames.join(', ') || 'Unknown Vocal';
+                }
+
+                const mJacket = document.getElementById('mini-jacket');
+                const mTitle = document.getElementById('mini-title');
+                const mVocal = document.getElementById('mini-vocal');
+                if (mJacket) mJacket.src = getJacketUrl(pCurrentMusic.id);
+                if (mTitle) mTitle.innerHTML = `<span class="scroll-text">${pCurrentMusic.title}</span>`;
+                if (mVocal) mVocal.innerHTML = `<span class="scroll-text">${finalVocalName}</span>`;
+            }
+
             updateMiniPlayerVisibility();
 
             const listVisible = document.getElementById('list-view-container')?.style.display !== 'none';
             const playerVisible = document.getElementById('player-view-container')?.style.display !== 'none';
             if (listVisible) renderList();
-            if (playerVisible) renderPlayerList();
+            if (playerVisible && document.getElementById('playlist-active-view')?.style.display !== 'none') renderPlayerList();
         }
 
-        async function getPlaybackAudioUrl(music, vocal) {
-            const baseUrl = getAudioBaseUrl(vocal);
-            if (!getOfflineRecord(music?.id) || !('caches' in window)) return { url: baseUrl, objectUrl: false };
-            try {
-                const cache = await getOfflineCache();
-                const cachedResponse = await cache.match(baseUrl);
-                if (!cachedResponse) return { url: baseUrl, objectUrl: false };
-                const blob = await cachedResponse.blob();
-                if (!blob.size) return { url: baseUrl, objectUrl: false };
-                return { url: URL.createObjectURL(blob), objectUrl: true };
-            } catch (e) {
-                console.warn(`Offline audio cache read failed for ${baseUrl}:`, e);
-                return { url: baseUrl, objectUrl: false };
-            }
-        }
-
-        function revokeAudioObjectUrl(isMainPlayer) {
-            if (isMainPlayer) {
-                if (pAudioObjectUrl) {
-                    URL.revokeObjectURL(pAudioObjectUrl);
-                    pAudioObjectUrl = null;
-                }
-            } else if (mAudioObjectUrl) {
-                URL.revokeObjectURL(mAudioObjectUrl);
-                mAudioObjectUrl = null;
-            }
-        }
-
-        async function loadPlayerAudio(music, vocal, autoPlay = false) {
-            if (!music || !vocal) return;
-            const token = ++pAudioSourceToken;
+        function loadPlayerAudio(music, vocal, autoPlay = false, sourcePlaylistId = activePlaylistId) {
+            const sourcePlaylist = playlists.find(p => p.id === sourcePlaylistId) || getActivePlaylist();
+            if (sourcePlaylist) playingPlaylistId = sourcePlaylist.id;
             pCurrentMusic = music;
             pCurrentVocal = vocal;
             pAudioRetryCount = 0;
@@ -5172,20 +4792,14 @@
             pSpeechAnnouncedForCurrentTrack = false;
             pSpeechTrackEndedWaiting = false;
             cancelPlayerSpeech();
-            pAudio.pause();
-            const resolved = await getPlaybackAudioUrl(music, vocal);
-            if (token !== pAudioSourceToken || pCurrentMusic !== music || pCurrentVocal !== vocal) {
-                if (resolved.objectUrl) URL.revokeObjectURL(resolved.url);
-                return;
-            }
+            const baseUrl = getAudioBaseUrl(vocal);
 
-            const currentUrl = pAudio.src || '';
-            const isNewSrc = currentUrl !== resolved.url;
+            const currentUrl = pAudio.src ? pAudio.src.split('?')[0] : '';
+            const isNewSrc = currentUrl !== baseUrl;
+
             if (isNewSrc) {
                 pAudio.pause();
-                revokeAudioObjectUrl(true);
-                pAudio.src = resolved.url;
-                if (resolved.objectUrl) pAudioObjectUrl = resolved.url;
+                pAudio.src = baseUrl;
                 try { pAudio.currentTime = 0; } catch (e) {}
                 pAudio.load();
             } else if (pAudio.ended) {
@@ -5193,9 +4807,12 @@
             }
 
             setupMediaSession(music, vocal, pAudio, true);
-            updatePlayerPageInfo();
+            updatePlayerPageInfo(); 
             syncPlayerUI();
-            if (autoPlay) startPlayerPlay();
+
+            if (autoPlay) {
+                startPlayerPlay();
+            }
         }
 
         function startPlayerPlay() {
@@ -5224,10 +4841,6 @@
                         if (e.name !== 'NotAllowedError' && pAudioRetryCount < 2 && pCurrentVocal) {
                             pAudioRetryCount++;
                             const baseUrl = getAudioBaseUrl(pCurrentVocal);
-                            if (getOfflineRecord(pCurrentMusic?.id)) {
-                                syncPlayerUI();
-                                return;
-                            }
                             const savedTime = isFinite(pAudio.currentTime) ? pAudio.currentTime : 0;
                             pAudio.src = `${baseUrl}?t=${Date.now()}`;
                             pAudio.load();
@@ -5257,31 +4870,36 @@
         }
         
         function playNext(isAuto = false) {
-            if (!currentPlaylist || currentPlaylist.length === 0) {
+            const playingPlaylist = getPlayingPlaylist();
+            const playlistTracks = getPlayingPlaylistTrackList();
+            const playbackShuffle = isShuffle;
+            const playbackRepeatMode = repeatMode;
+
+            if (!playingPlaylist || playlistTracks.length === 0) {
                 try { pAudio.currentTime = skipSilence ? 8 : 0; } catch (e) {}
                 syncPlayerUI();
                 return;
             }
 
-            if (isAuto && repeatMode === 'one') {
+            if (isAuto && playbackRepeatMode === 'one') {
                 try { pAudio.currentTime = skipSilence ? 8 : 0; } catch (e) {}
                 startPlayerPlay();
                 return;
             }
 
-            const currentIndex = currentPlaylist.findIndex(m => m.id === pCurrentMusic?.id);
+            const currentIndex = playlistTracks.findIndex(m => m.id === pCurrentMusic?.id);
             let nextIndex = 0;
 
-            if (isShuffle) {
-                nextIndex = Math.floor(Math.random() * currentPlaylist.length);
-                if (nextIndex === currentIndex && currentPlaylist.length > 1) {
-                    nextIndex = (nextIndex + 1) % currentPlaylist.length;
+            if (playbackShuffle) {
+                nextIndex = Math.floor(Math.random() * playlistTracks.length);
+                if (nextIndex === currentIndex && playlistTracks.length > 1) {
+                    nextIndex = (nextIndex + 1) % playlistTracks.length;
                 }
             } else {
                 if (currentIndex !== -1) {
                     nextIndex = currentIndex + 1;
-                    if (nextIndex >= currentPlaylist.length) {
-                        if (repeatMode === 'all') {
+                    if (nextIndex >= playlistTracks.length) {
+                        if (playbackRepeatMode === 'all') {
                             nextIndex = 0;
                         } else {
                             pAudio.pause();
@@ -5293,56 +4911,51 @@
                 }
             }
 
-            const nextMusic = currentPlaylist[nextIndex];
+            const nextMusic = playlistTracks[nextIndex];
             const mVocals = vocalMap.get(nextMusic.id) || [];
             const nextVocal = getDefaultVocal(nextMusic, mVocals);
-            loadPlayerAudio(nextMusic, nextVocal, true);
+            loadPlayerAudio(nextMusic, nextVocal, true, playingPlaylist.id);
         }
 
         function playPrev() {
-            if (!currentPlaylist || currentPlaylist.length === 0) return;
+            const playingPlaylist = getPlayingPlaylist();
+            const playlistTracks = getPlayingPlaylistTrackList();
+            const playbackShuffle = isShuffle;
+            if (!playingPlaylist || playlistTracks.length === 0) return;
             if (pAudio.currentTime > 3) {
                 pAudio.currentTime = skipSilence ? 8 : 0;
                 return;
             }
             
-            const currentIndex = currentPlaylist.findIndex(m => m.id === pCurrentMusic?.id);
+            const currentIndex = playlistTracks.findIndex(m => m.id === pCurrentMusic?.id);
             let prevIndex = 0;
 
-            if (isShuffle) {
-                prevIndex = Math.floor(Math.random() * currentPlaylist.length);
+            if (playbackShuffle) {
+                prevIndex = Math.floor(Math.random() * playlistTracks.length);
             } else {
                 if (currentIndex !== -1) {
-                    prevIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+                    prevIndex = (currentIndex - 1 + playlistTracks.length) % playlistTracks.length;
                 }
             }
 
-            const prevMusic = currentPlaylist[prevIndex];
+            const prevMusic = playlistTracks[prevIndex];
             const mVocals = vocalMap.get(prevMusic.id) || [];
             const prevVocal = getDefaultVocal(prevMusic, mVocals);
-            loadPlayerAudio(prevMusic, prevVocal, true);
+            loadPlayerAudio(prevMusic, prevVocal, true, playingPlaylist.id);
         }
 
-        async function loadModalAudio(music, vocal, autoPlay = false) {
-            if (!music || !vocal) return;
-            const token = ++mAudioSourceToken;
+        function loadModalAudio(music, vocal, autoPlay = false) {
             mCurrentMusic = music;
             mCurrentVocal = vocal;
-            mAudioRetryCount = 0;
-            mAudio.pause();
-            const resolved = await getPlaybackAudioUrl(music, vocal);
-            if (token !== mAudioSourceToken || mCurrentMusic !== music || mCurrentVocal !== vocal) {
-                if (resolved.objectUrl) URL.revokeObjectURL(resolved.url);
-                return;
-            }
-
-            const currentUrl = mAudio.src || '';
-            const isNewSrc = currentUrl !== resolved.url;
+            mAudioRetryCount = 0; 
+            const baseUrl = getAudioBaseUrl(vocal);
+            
+            const currentUrl = mAudio.src ? mAudio.src.split('?')[0] : '';
+            const isNewSrc = currentUrl !== baseUrl;
+            
             if (isNewSrc) {
                 mAudio.pause();
-                revokeAudioObjectUrl(false);
-                mAudio.src = resolved.url;
-                if (resolved.objectUrl) mAudioObjectUrl = resolved.url;
+                mAudio.src = baseUrl;
                 try { mAudio.currentTime = 0; } catch (e) {}
                 mAudio.load();
             } else if (mAudio.ended) {
@@ -5350,10 +4963,17 @@
             }
 
             setupMediaSession(music, vocal, mAudio, false);
+            
             const mVSel = document.getElementById('modal-vocal-selector');
-            if (mVSel) createVocalSelectorDOM(mVSel, music, vocalMap.get(music.id) || [], true);
+            if (mVSel) {
+                createVocalSelectorDOM(mVSel, music, vocalMap.get(music.id) || [], true);
+            }
+
             syncModalUI();
-            if (autoPlay) startModalPlay();
+
+            if (autoPlay) {
+                startModalPlay();
+            }
         }
 
         function startModalPlay() {
@@ -5380,10 +5000,6 @@
                         if (e.name !== 'NotAllowedError' && mAudioRetryCount < 2 && mCurrentVocal) {
                             mAudioRetryCount++;
                             const baseUrl = getAudioBaseUrl(mCurrentVocal);
-                            if (getOfflineRecord(mCurrentMusic?.id)) {
-                                syncModalUI();
-                                return;
-                            }
                             const savedTime = isFinite(mAudio.currentTime) ? mAudio.currentTime : 0;
                             mAudio.src = `${baseUrl}?t=${Date.now()}`;
                             mAudio.load();
