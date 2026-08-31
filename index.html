@@ -721,131 +721,6 @@
             border: 2px solid var(--accent-color);
             background: rgba(0, 188, 212, 0.05);
         }
-
-        .music-item {
-            position: relative;
-        }
-
-        .music-cache-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 2;
-            width: 36px;
-            height: 36px;
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
-            background: rgba(255,255,255,0.94);
-            color: var(--text-sub);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            cursor: pointer;
-            box-shadow: var(--shadow-sm);
-            transition: background 0.2s, color 0.2s, border-color 0.2s;
-        }
-
-        .music-cache-btn:hover,
-        .music-cache-btn.cached {
-            color: var(--accent-color);
-            border-color: var(--accent-color);
-            background: rgba(255,255,255,0.98);
-        }
-
-        .music-cache-btn .material-icons-round {
-            font-size: 20px;
-        }
-
-        .layout-1 .music-item .music-cache-btn {
-            top: 50%;
-            right: 8px;
-            transform: translateY(-50%);
-        }
-
-        .layout-1 .music-item .info-container {
-            padding-right: 44px;
-        }
-
-        .playlist-saved-song-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .playlist-saved-song-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            background: var(--secondary-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            min-width: 0;
-        }
-
-        .playlist-saved-song-text {
-            min-width: 0;
-        }
-
-        .playlist-saved-song-title {
-            font-size: 13px;
-            font-weight: 700;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-
-        .playlist-saved-song-meta {
-            margin-top: 2px;
-            color: var(--text-sub);
-            font-size: 11px;
-        }
-
-        .playlist-cache-summary {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 10px 12px;
-            background: var(--secondary-bg);
-            border-radius: var(--radius-sm);
-            color: var(--text-sub);
-            font-size: 12px;
-            flex-wrap: wrap;
-        }
-
-        .playlist-cache-summary strong { color: var(--text-main); }
-
-        .playlist-storage-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-        }
-
-        .playlist-storage-stat {
-            padding: 12px;
-            background: var(--secondary-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-        }
-
-        .playlist-storage-stat-label {
-            color: var(--text-sub);
-            font-size: 11px;
-        }
-
-        .playlist-storage-stat-value {
-            margin-top: 3px;
-            font-size: 15px;
-            font-weight: 700;
-            word-break: break-word;
-        }
-
-        @media (max-width: 600px) {
-            .playlist-storage-grid { grid-template-columns: 1fr; }
-        }
         
         .music-item img {
             width: 100%;
@@ -887,6 +762,66 @@
             justify-content: flex-start;
             align-items: center;
             text-align: left;
+        }
+
+        .music-item { position: relative; }
+
+        .offline-save-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 2;
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+            padding: 6px;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(4px);
+        }
+
+        .offline-save-btn:hover,
+        .offline-save-btn[aria-pressed="true"] {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            background: var(--primary-bg);
+        }
+
+        .offline-save-btn:disabled { cursor: wait; opacity: 0.72; }
+
+        .offline-saved-song-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+
+        .offline-saved-song-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+        }
+
+        .offline-saved-song-main { min-width: 0; }
+        .offline-saved-song-title { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .offline-saved-song-meta { margin-top: 2px; color: var(--text-sub); font-size: 11px; }
+        .offline-saved-song-actions { display: flex; gap: 4px; align-items: center; }
+
+        .offline-storage-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin: 12px 0 8px;
+        }
+
+        .offline-storage-value { flex-shrink: 0; font-size: 13px; font-weight: 700; text-align: right; }
+
+        @media (max-width: 600px) {
+            .offline-save-btn { top: 6px; right: 6px; width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
+            .offline-storage-summary { gap: 10px; }
         }
 
         /* Layout Types */
@@ -2056,6 +1991,33 @@
             </section>
 
             <section class="settings-card">
+                <h2>オフライン保存</h2>
+                <p class="settings-help">一覧画面・再生リストの保存ボタンから、楽曲情報と再生に必要な音源を端末に保存できます。</p>
+                <div class="offline-storage-summary">
+                    <div class="setting-row-text">
+                        <span>ページの使用ストレージ</span>
+                        <small id="offline-storage-detail">取得中...</small>
+                    </div>
+                    <div id="offline-storage-value" class="offline-storage-value">取得中...</div>
+                </div>
+                <div class="settings-detail-action">
+                    <div>
+                        <strong>保存した曲</strong>
+                        <small id="offline-saved-count">0曲</small>
+                    </div>
+                    <button type="button" class="secondary-btn" id="offline-refresh-btn"><span class="material-icons-round">refresh</span>更新</button>
+                </div>
+                <div id="offline-saved-song-list" class="offline-saved-song-list"></div>
+                <div class="settings-detail-action">
+                    <div>
+                        <strong>保存データをすべて削除</strong>
+                        <small>保存した曲の情報・音源・ジャケットをCache Storageから削除します。</small>
+                    </div>
+                    <button type="button" class="secondary-btn" id="offline-delete-all-btn"><span class="material-icons-round">delete_sweep</span>すべて削除</button>
+                </div>
+            </section>
+
+            <section class="settings-card">
                 <h2>読み上げ</h2>
                 <div class="setting-row">
                     <div class="setting-row-text">
@@ -2075,54 +2037,6 @@
                     <button type="button" class="secondary-btn" id="open-speech-details">
                         <span class="material-icons-round">chevron_right</span>
                         詳細設定
-                    </button>
-                </div>
-            </section>
-
-            <section class="settings-card">
-                <h2>保存した楽曲</h2>
-                <div class="playlist-cache-summary">
-                    <span>一覧・再生リストから保存した楽曲です。</span>
-                    <strong id="cached-music-count">0曲</strong>
-                </div>
-                <div class="settings-detail-action">
-                    <div>
-                        <strong>保存データの管理</strong>
-                        <small>楽曲メタデータとジャケットをページのキャッシュへ保存します。
-                            <br>音声ファイルは保存しません。</small>
-                    </div>
-                    <button type="button" class="secondary-btn" id="clear-all-cached-music">
-                        <span class="material-icons-round">delete_sweep</span>
-                        全て削除
-                    </button>
-                </div>
-                <div id="cached-music-list" class="playlist-saved-song-list"></div>
-            </section>
-
-            <section class="settings-card">
-                <h2>ストレージ</h2>
-                <div class="playlist-storage-grid">
-                    <div class="playlist-storage-stat">
-                        <div class="playlist-storage-stat-label">ブラウザー使用量</div>
-                        <div class="playlist-storage-stat-value" id="storage-usage-value">-</div>
-                    </div>
-                    <div class="playlist-storage-stat">
-                        <div class="playlist-storage-stat-label">推定容量</div>
-                        <div class="playlist-storage-stat-value" id="storage-quota-value">-</div>
-                    </div>
-                    <div class="playlist-storage-stat">
-                        <div class="playlist-storage-stat-label">使用率</div>
-                        <div class="playlist-storage-stat-value" id="storage-percent-value">-</div>
-                    </div>
-                </div>
-                <div class="playlist-cache-summary" style="margin-top: 10px;">
-                    <span>楽曲キャッシュ</span>
-                    <strong id="music-cache-storage-value">-</strong>
-                </div>
-                <p class="settings-help" style="margin-top: 8px;">ブラウザー使用量・容量は推定値です。楽曲キャッシュは実際の保存データを再計測します。</p>
-                <div class="filter-actions">
-                    <button type="button" class="secondary-btn" id="refresh-storage-info">
-                        <span class="material-icons-round">refresh</span>更新
                     </button>
                 </div>
             </section>
@@ -2316,36 +2230,18 @@
         const DB_BASE = 'https://sekai-world.github.io/sekai-master-db-diff';
         const ASSET_BASE = 'https://storage.sekai.best/sekai-jp-assets';
 
-        const MUSIC_CACHE_NAME = 'sekai-music-db-song-cache-v2';
-        const LEGACY_MUSIC_CACHE_NAMES = ['sekai-music-db-song-cache-v1'];
-        const MUSIC_CACHE_KEY_PREFIX = `${window.location.origin}/__sekai_music_cache__/song/`;
-        const MUSIC_CACHE_JACKET_PREFIX = 'jacket/';
-        const MUSIC_CACHE_JACKET_URL_PREFIX = `${ASSET_BASE}/music/jacket/`;
-        const SERVICE_WORKER_SCRIPT = './sw.js';
-        let serviceWorkerRegistrationPromise = null;
-
-        function registerOfflineServiceWorker() {
-            if (!('serviceWorker' in navigator)) return Promise.resolve(null);
-            if (serviceWorkerRegistrationPromise) return serviceWorkerRegistrationPromise;
-            try {
-                const swUrl = new URL(SERVICE_WORKER_SCRIPT, document.baseURI);
-                serviceWorkerRegistrationPromise = navigator.serviceWorker.register(swUrl, { scope: './' })
-                    .then(async registration => {
-                        try { registration.update(); } catch (e) {}
-                        try { await navigator.serviceWorker.ready; } catch (e) {}
-                        return registration;
-                    })
-                    .catch(err => {
-                        console.warn('Service Worker registration failed:', err);
-                        return null;
-                    });
-            } catch (e) {
-                serviceWorkerRegistrationPromise = Promise.resolve(null);
-            }
-            return serviceWorkerRegistrationPromise;
-        }
-        let cachedMusicIds = new Set();
-        let cachedMusicInitPromise = null;
+        // Offline storage uses Cache Storage for actual resources and a small localStorage manifest.
+        const OFFLINE_CACHE_NAME = 'sekai-music-offline-v1';
+        const OFFLINE_MANIFEST_KEY = 'sekaiMusicOfflineManifest_v1';
+        const OFFLINE_SHELL_CACHE_NAME = 'sekai-music-shell-v1';
+        const OFFLINE_DATA_CACHE_NAME = 'sekai-music-data-v1';
+        const OFFLINE_METADATA_PREFIX = '__sekai_offline__/song/';
+        let offlineSavedSongs = loadOfflineManifest();
+        const offlineSavingIds = new Set();
+        let pAudioSourceToken = 0;
+        let mAudioSourceToken = 0;
+        let pAudioObjectUrl = null;
+        let mAudioObjectUrl = null;
 
         let musics = [], difficulties = [], vocals = [], gameChars = [], outsideChars = [], tags = [], originals = [];
         let diffMap = new Map(), vocalMap = new Map(), tagMap = new Map(), origMap = new Map();
@@ -2716,371 +2612,6 @@
                 shuffle: !!raw.shuffle,
                 repeatMode: ['none', 'all', 'one'].includes(raw.repeatMode) ? raw.repeatMode : 'none'
             };
-        }
-
-        function musicCacheKey(id) {
-            return `${MUSIC_CACHE_KEY_PREFIX}${encodeURIComponent(String(id))}.json`;
-        }
-
-        function musicCacheJacketKey(id) {
-            return `${MUSIC_CACHE_JACKET_PREFIX}${encodeURIComponent(String(id))}`;
-        }
-
-        function isMusicCacheSupported() {
-            return typeof window !== 'undefined' && 'caches' in window;
-        }
-
-        function buildMusicCachePayload(music) {
-            const id = String(music?.id ?? '');
-            return {
-                format: 'sekai-music-cache',
-                version: 1,
-                cachedAt: Date.now(),
-                music: music ? JSON.parse(JSON.stringify(music)) : null,
-                difficulties: (diffMap.get(music?.id) || {}),
-                vocals: vocalMap.get(music?.id) || [],
-                tags: tagMap.get(music?.id) || [],
-                originalVideoLink: origMap.get(music?.id) || '',
-                gameCharacters: Array.from(new Set((vocalMap.get(music?.id) || []).flatMap(v => (v.characters || []).filter(c => c.characterType === 'game_character').map(c => c.characterId))))
-                    .map(characterId => gameCharMap.get(characterId)).filter(Boolean),
-                outsideCharacters: Array.from(new Set((vocalMap.get(music?.id) || []).flatMap(v => (v.characters || []).filter(c => c.characterType !== 'game_character').map(c => c.characterId))))
-                    .map(characterId => outCharMap.get(characterId)).filter(Boolean),
-                id
-            };
-        }
-
-        async function refreshCachedMusicIdsFromCache() {
-            if (!isMusicCacheSupported()) {
-                cachedMusicIds = new Set();
-                return cachedMusicIds;
-            }
-            if (cachedMusicInitPromise) return cachedMusicInitPromise;
-            cachedMusicInitPromise = (async () => {
-                try {
-                    await Promise.all(LEGACY_MUSIC_CACHE_NAMES.map(name => caches.delete(name)));
-                    const cache = await caches.open(MUSIC_CACHE_NAME);
-                    const requests = await cache.keys();
-                    const ids = new Set();
-                    requests.forEach(req => {
-                        const url = req.url;
-                        if (!url.startsWith(MUSIC_CACHE_KEY_PREFIX) || !url.endsWith('.json')) return;
-                        const encoded = url.slice(MUSIC_CACHE_KEY_PREFIX.length, -5);
-                        try { ids.add(decodeURIComponent(encoded)); } catch (e) {}
-                    });
-                    cachedMusicIds = ids;
-                    return cachedMusicIds;
-                } catch (e) {
-                    cachedMusicIds = new Set();
-                    return cachedMusicIds;
-                } finally {
-                    cachedMusicInitPromise = null;
-                }
-            })();
-            return cachedMusicInitPromise;
-        }
-
-        async function getMusicCacheEntry(id) {
-            if (!isMusicCacheSupported()) return null;
-            try {
-                const cache = await caches.open(MUSIC_CACHE_NAME);
-                const response = await cache.match(musicCacheKey(id));
-                if (!response) return null;
-                return await response.json();
-            } catch (e) {
-                return null;
-            }
-        }
-
-        async function saveMusicToPageCache(music) {
-            if (!music || music.id === undefined || music.id === null) {
-                alert('楽曲情報を保存できませんでした。');
-                return false;
-            }
-            if (!isMusicCacheSupported()) {
-                alert('このブラウザーではページキャッシュを利用できません。GitHub PagesのHTTPS環境で開いてください。');
-                return false;
-            }
-            try {
-                await registerOfflineServiceWorker();
-                const id = String(music.id);
-                const cache = await caches.open(MUSIC_CACHE_NAME);
-                const payload = buildMusicCachePayload(music);
-                const jsonResponse = new Response(JSON.stringify(payload), {
-                    headers: { 'Content-Type': 'application/json; charset=utf-8' }
-                });
-                await cache.put(musicCacheKey(id), jsonResponse);
-
-                const jacketUrl = getJacketUrl(music.id);
-                const response = await fetch(jacketUrl, {
-                    mode: 'no-cors',
-                    credentials: 'omit',
-                    cache: 'no-store'
-                });
-                if (response.type === 'opaque' || response.ok) {
-                    await cache.put(new Request(jacketUrl), response);
-                }
-
-                cachedMusicIds.add(id);
-                renderCachedMusicList();
-                updateCachedMusicButtons();
-                await refreshStorageInfo();
-                return true;
-            } catch (e) {
-                console.error(e);
-                // メタデータだけ残った場合は不完全な保存なのでロールバックする。
-                try {
-                    const cache = await caches.open(MUSIC_CACHE_NAME);
-                    await cache.delete(musicCacheKey(music.id));
-                    await cache.delete(new Request(getJacketUrl(music.id)));
-                } catch (cleanupError) {}
-                cachedMusicIds.delete(String(music.id));
-                renderCachedMusicList();
-                updateCachedMusicButtons();
-                await refreshStorageInfo();
-                alert('楽曲情報の保存に失敗しました。ネットワーク接続とストレージ容量を確認してください。');
-                return false;
-            }
-        }
-
-        async function deleteMusicFromPageCache(id) {
-            if (!isMusicCacheSupported()) return false;
-            try {
-                const key = String(id);
-                const cache = await caches.open(MUSIC_CACHE_NAME);
-                await Promise.all([
-                    cache.delete(musicCacheKey(key)),
-                    cache.delete(new Request(getJacketUrl(key)))
-                ]);
-                cachedMusicIds.delete(key);
-                renderCachedMusicList();
-                updateCachedMusicButtons();
-                await refreshStorageInfo();
-                return true;
-            } catch (e) {
-                console.error(e);
-                alert('保存した楽曲の削除に失敗しました。');
-                return false;
-            }
-        }
-
-        async function clearAllMusicPageCache() {
-            if (!isMusicCacheSupported()) return;
-            await refreshCachedMusicIdsFromCache();
-            if (!cachedMusicIds.size) {
-                alert('保存した楽曲はありません。');
-                return;
-            }
-            if (!confirm(`保存した${cachedMusicIds.size}曲のキャッシュを全て削除しますか？\nこの操作は元に戻せません。`)) return;
-            try {
-                await caches.delete(MUSIC_CACHE_NAME);
-                await Promise.all(LEGACY_MUSIC_CACHE_NAMES.map(name => caches.delete(name)));
-                cachedMusicIds = new Set();
-                cachedMusicInitPromise = null;
-                renderCachedMusicList();
-                updateCachedMusicButtons();
-                await refreshStorageInfo();
-            } catch (e) {
-                console.error(e);
-                alert('保存した楽曲の全削除に失敗しました。');
-                await refreshCachedMusicIdsFromCache();
-            }
-        }
-
-        function createMusicCacheButton(music) {
-            const button = document.createElement('button');
-            const id = String(music.id);
-            const cached = cachedMusicIds.has(id);
-            button.type = 'button';
-            button.className = `music-cache-btn${cached ? ' cached' : ''}`;
-            button.title = cached ? 'キャッシュを削除' : '楽曲情報をキャッシュに保存';
-            button.setAttribute('aria-label', cached ? 'キャッシュを削除' : '楽曲情報をキャッシュに保存');
-            button.innerHTML = `<span class="material-icons-round">${cached ? 'cloud_done' : 'cloud_download'}</span>`;
-            button.addEventListener('click', async e => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (cachedMusicIds.has(id)) await deleteMusicFromPageCache(id);
-                else await saveMusicToPageCache(music);
-            });
-            return button;
-        }
-
-        function updateCachedMusicButtons() {
-            document.querySelectorAll('.music-cache-btn').forEach(button => {
-                const id = button.dataset.musicId;
-                if (!id) return;
-                const cached = cachedMusicIds.has(id);
-                button.classList.toggle('cached', cached);
-                button.title = cached ? 'キャッシュを削除' : '楽曲情報をキャッシュに保存';
-                button.setAttribute('aria-label', button.title);
-                const icon = button.querySelector('.material-icons-round');
-                if (icon) icon.textContent = cached ? 'cloud_done' : 'cloud_download';
-            });
-        }
-
-        function createMusicItemCacheButton(music) {
-            const button = createMusicCacheButton(music);
-            button.dataset.musicId = String(music.id);
-            return button;
-        }
-
-        function renderCachedMusicList() {
-            const list = document.getElementById('cached-music-list');
-            const count = document.getElementById('cached-music-count');
-            if (count) count.textContent = `${cachedMusicIds.size}曲`;
-            if (!list) return;
-            list.innerHTML = '';
-            const sorted = Array.from(cachedMusicIds).sort((a, b) => Number(a) - Number(b));
-            if (!sorted.length) {
-                const empty = document.createElement('div');
-                empty.className = 'settings-help';
-                empty.textContent = '保存した楽曲はありません。';
-                list.appendChild(empty);
-                return;
-            }
-            const fragment = document.createDocumentFragment();
-            sorted.forEach(id => {
-                const music = musics.find(m => String(m.id) === id);
-                const row = document.createElement('div');
-                row.className = 'playlist-saved-song-row';
-                const text = document.createElement('div');
-                text.className = 'playlist-saved-song-text';
-                const title = document.createElement('div');
-                title.className = 'playlist-saved-song-title';
-                title.textContent = music?.title || `楽曲ID ${id}`;
-                title.title = title.textContent;
-                const meta = document.createElement('div');
-                meta.className = 'playlist-saved-song-meta';
-                meta.textContent = `ID: ${id}`;
-                text.append(title, meta);
-                const deleteBtn = document.createElement('button');
-                deleteBtn.type = 'button';
-                deleteBtn.className = 'secondary-btn';
-                deleteBtn.innerHTML = '<span class="material-icons-round">delete</span>削除';
-                deleteBtn.addEventListener('click', () => deleteMusicFromPageCache(id));
-                row.append(text, deleteBtn);
-                fragment.appendChild(row);
-            });
-            list.appendChild(fragment);
-        }
-
-        function formatBytes(bytes) {
-            if (!Number.isFinite(bytes) || bytes < 0) return '-';
-            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-            let value = bytes;
-            let unitIndex = 0;
-            while (value >= 1024 && unitIndex < units.length - 1) {
-                value /= 1024;
-                unitIndex++;
-            }
-            const digits = unitIndex === 0 ? 0 : value >= 100 ? 0 : value >= 10 ? 1 : 2;
-            return `${value.toFixed(digits)} ${units[unitIndex]}`;
-        }
-
-        async function estimateMusicCacheUsage() {
-            if (!isMusicCacheSupported()) return 0;
-            try {
-                const cache = await caches.open(MUSIC_CACHE_NAME);
-                const requests = await cache.keys();
-                let total = 0;
-                for (const request of requests) {
-                    try {
-                        const response = await cache.match(request);
-                        if (!response) continue;
-                        const buffer = await response.clone().arrayBuffer();
-                        total += buffer.byteLength;
-                    } catch (e) {}
-                }
-                return total;
-            } catch (e) {
-                return 0;
-            }
-        }
-
-        async function refreshStorageInfo() {
-            const usageEl = document.getElementById('storage-usage-value');
-            const quotaEl = document.getElementById('storage-quota-value');
-            const percentEl = document.getElementById('storage-percent-value');
-            const cacheEl = document.getElementById('music-cache-storage-value');
-            if (!usageEl || !quotaEl || !percentEl || !cacheEl) return;
-
-            usageEl.textContent = '更新中…';
-            quotaEl.textContent = '更新中…';
-            percentEl.textContent = '更新中…';
-            cacheEl.textContent = '更新中…';
-
-            try {
-                await refreshCachedMusicIdsFromCache();
-                const cacheBytes = await estimateMusicCacheUsage();
-                cacheEl.textContent = formatBytes(cacheBytes);
-
-                await new Promise(resolve => setTimeout(resolve, 0));
-                const estimate = navigator.storage?.estimate ? await navigator.storage.estimate() : null;
-                if (estimate && Number.isFinite(estimate.usage) && Number.isFinite(estimate.quota) && estimate.quota > 0) {
-                    usageEl.textContent = formatBytes(estimate.usage);
-                    quotaEl.textContent = formatBytes(estimate.quota);
-                    percentEl.textContent = `${((estimate.usage / estimate.quota) * 100).toFixed(2)}%`;
-                } else {
-                    usageEl.textContent = '-';
-                    quotaEl.textContent = '-';
-                    percentEl.textContent = '-';
-                }
-            } catch (e) {
-                usageEl.textContent = '-';
-                quotaEl.textContent = '-';
-                percentEl.textContent = '-';
-                cacheEl.textContent = '-';
-            }
-        }
-
-        async function loadOfflineMusicDatabase() {
-            await refreshCachedMusicIdsFromCache();
-            if (!cachedMusicIds.size) throw new Error('No cached music');
-            const cache = await caches.open(MUSIC_CACHE_NAME);
-            const entries = [];
-            for (const id of cachedMusicIds) {
-                try {
-                    const response = await cache.match(musicCacheKey(id));
-                    if (!response) continue;
-                    const payload = await response.json();
-                    if (payload?.music) entries.push(payload);
-                } catch (e) {}
-            }
-            if (!entries.length) throw new Error('No valid cached music');
-
-            musics = entries.map(e => e.music).filter(Boolean);
-            difficulties = entries.flatMap(e => Object.values(e.difficulties || {}));
-            vocals = entries.flatMap(e => e.vocals || []);
-            tags = entries.flatMap(e => (e.tags || []).map(musicTag => ({ musicId: e.music?.id, musicTag })));
-            originals = entries.filter(e => e.originalVideoLink).map(e => ({ musicId: e.music?.id, videoLink: e.originalVideoLink }));
-
-            const gameCharacterMap = new Map();
-            const outsideCharacterMap = new Map();
-            entries.flatMap(e => e.gameCharacters || []).forEach(c => gameCharacterMap.set(c.id, c));
-            entries.flatMap(e => e.outsideCharacters || []).forEach(c => outsideCharacterMap.set(c.id, c));
-            gameChars = Array.from(gameCharacterMap.values());
-            outsideChars = Array.from(outsideCharacterMap.values());
-
-            diffMap = new Map();
-            vocalMap = new Map();
-            tagMap = new Map();
-            origMap = new Map();
-            gameCharMap = new Map();
-            outCharMap = new Map();
-            difficulties.forEach(d => {
-                if (!diffMap.has(d.musicId)) diffMap.set(d.musicId, {});
-                diffMap.get(d.musicId)[d.musicDifficulty] = d;
-            });
-            vocals.forEach(v => {
-                if (!vocalMap.has(v.musicId)) vocalMap.set(v.musicId, []);
-                vocalMap.get(v.musicId).push(v);
-            });
-            tags.forEach(t => {
-                if (!tagMap.has(t.musicId)) tagMap.set(t.musicId, []);
-                tagMap.get(t.musicId).push(t.musicTag);
-            });
-            originals.forEach(o => origMap.set(o.musicId, o.videoLink));
-            gameChars.forEach(c => gameCharMap.set(c.id, c));
-            outsideChars.forEach(c => outCharMap.set(c.id, c));
         }
 
         function loadPlaylists() {
@@ -3620,6 +3151,370 @@
         let pSpeechAnnouncePending = false;
         let pSpeechAnnouncedForCurrentTrack = false;
 
+        function loadOfflineManifest() {
+            try {
+                const raw = localStorage.getItem(OFFLINE_MANIFEST_KEY);
+                if (!raw) return {};
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object' || parsed.version !== 1 || !parsed.songs || typeof parsed.songs !== 'object') return {};
+                const result = {};
+                Object.entries(parsed.songs).forEach(([id, record]) => {
+                    if (!record || typeof record !== 'object') return;
+                    const normalizedId = String(id);
+                    result[normalizedId] = {
+                        id: normalizedId,
+                        title: String(record.title || normalizedId),
+                        savedAt: Number(record.savedAt) || 0,
+                        sizeBytes: Math.max(0, Number(record.sizeBytes) || 0),
+                        vocalCount: Math.max(0, Number(record.vocalCount) || 0),
+                        resources: Array.isArray(record.resources) ? [...new Set(record.resources.map(String).filter(Boolean))] : []
+                    };
+                });
+                return result;
+            } catch (e) { return {}; }
+        }
+
+        function saveOfflineManifest() {
+            try {
+                localStorage.setItem(OFFLINE_MANIFEST_KEY, JSON.stringify({ version: 1, songs: offlineSavedSongs }));
+                return true;
+            } catch (e) {
+                console.error('Offline manifest save failed:', e);
+                return false;
+            }
+        }
+
+        function getOfflineRecord(musicId) { return offlineSavedSongs[String(musicId)] || null; }
+
+        function formatStorageBytes(bytes) {
+            const value = Math.max(0, Number(bytes) || 0);
+            if (value < 1024) return `${Math.round(value)} B`;
+            if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+            if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+            return `${(value / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        }
+
+        function getOfflineMetadataKey(musicId) {
+            return new URL(`${OFFLINE_METADATA_PREFIX}${encodeURIComponent(String(musicId))}.json`, window.location.href).toString();
+        }
+
+        async function getOfflineCache() {
+            if (!('caches' in window)) throw new Error('Cache Storage is not supported in this browser.');
+            return caches.open(OFFLINE_CACHE_NAME);
+        }
+
+        function createOfflineSaveButton(music) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'icon-btn offline-save-btn';
+            button.dataset.songId = String(music.id);
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleOfflineSong(music);
+            });
+            updateOfflineSaveButton(button, music.id);
+            return button;
+        }
+
+        function updateOfflineSaveButton(button, musicId) {
+            if (!button) return;
+            const id = String(musicId);
+            const isSaving = offlineSavingIds.has(id);
+            const isSaved = !!getOfflineRecord(id);
+            button.disabled = isSaving;
+            button.setAttribute('aria-pressed', isSaved ? 'true' : 'false');
+            button.title = isSaving ? 'オフライン保存中...' : isSaved ? 'オフライン保存を削除' : 'オフライン保存';
+            button.setAttribute('aria-label', button.title);
+            button.innerHTML = `<span class="material-icons-round">${isSaving ? 'downloading' : isSaved ? 'offline_pin' : 'download'}</span>`;
+        }
+
+        function updateOfflineSaveButtons(musicId = null) {
+            document.querySelectorAll('.offline-save-btn[data-song-id]').forEach(button => {
+                if (musicId === null || String(button.dataset.songId) === String(musicId)) updateOfflineSaveButton(button, button.dataset.songId);
+            });
+        }
+
+        async function fetchAndCacheOfflineResource(cache, url) {
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok && response.type !== 'opaque') throw new Error(`Failed to fetch offline resource: ${url}`);
+            const sizeResponse = response.clone();
+            await cache.put(url, response.clone());
+            const blob = await sizeResponse.blob();
+            return blob.size;
+        }
+
+        async function saveSongOffline(music) {
+            const id = String(music?.id ?? '');
+            if (!music || !id) throw new Error('楽曲情報がありません。');
+            if (getOfflineRecord(id) || offlineSavingIds.has(id)) return;
+
+            offlineSavingIds.add(id);
+            updateOfflineSaveButtons(id);
+            try {
+                const cache = await getOfflineCache();
+                const mVocals = [...(vocalMap.get(music.id) || vocalMap.get(id) || vocalMap.get(Number(id)) || [])];
+                if (mVocals.length === 0) throw new Error('保存できる音源がありません。');
+
+                const metadataKey = getOfflineMetadataKey(id);
+                const jacketUrl = getJacketUrl(music.id);
+                const resources = [jacketUrl];
+                let sizeBytes = 0;
+
+                await cache.put(metadataKey, new Response(JSON.stringify({ version: 1, musicId: id, music, savedAt: Date.now(), vocalCount: 0, resources: [] }), {
+                    headers: { 'Content-Type': 'application/json; charset=utf-8' }
+                }));
+
+                try {
+                    sizeBytes += await fetchAndCacheOfflineResource(cache, jacketUrl);
+                    for (const vocal of mVocals) {
+                        const audioUrl = getAudioBaseUrl(vocal);
+                        resources.push(audioUrl);
+                        sizeBytes += await fetchAndCacheOfflineResource(cache, audioUrl);
+                    }
+
+                    const savedAt = Date.now();
+                    const normalizedResources = [...new Set(resources)];
+                    const metadata = { version: 1, musicId: id, music, savedAt, vocalCount: mVocals.length, resources: normalizedResources };
+                    sizeBytes += new Blob([JSON.stringify(metadata)]).size;
+                    await cache.put(metadataKey, new Response(JSON.stringify(metadata), { headers: { 'Content-Type': 'application/json; charset=utf-8' } }));
+
+                    offlineSavedSongs[id] = { id, title: String(music.title || `楽曲 ${id}`), savedAt, sizeBytes, vocalCount: mVocals.length, resources: normalizedResources };
+                    if (!saveOfflineManifest()) throw new Error('保存情報の書き込みに失敗しました。');
+                    renderList();
+                    renderPlayerList();
+                    renderOfflineSettings();
+                } catch (error) {
+                    delete offlineSavedSongs[id];
+                    saveOfflineManifest();
+                    await cache.delete(metadataKey).catch(() => {});
+                    for (const resourceUrl of [...new Set(resources)]) await cache.delete(resourceUrl).catch(() => {});
+                    throw error;
+                }
+            } finally {
+                offlineSavingIds.delete(id);
+                updateOfflineSaveButtons(id);
+                refreshOfflineStorageUsage();
+            }
+        }
+
+        async function deleteOfflineSong(musicId, options = {}) {
+            const id = String(musicId);
+            const record = getOfflineRecord(id);
+            const cache = await getOfflineCache();
+            const metadataKey = getOfflineMetadataKey(id);
+            let resources = Array.isArray(record?.resources) ? [...record.resources] : [];
+
+            const metadataResponse = await cache.match(metadataKey);
+            if (metadataResponse) {
+                try {
+                    const metadata = await metadataResponse.json();
+                    if (Array.isArray(metadata.resources)) resources.push(...metadata.resources.map(String));
+                } catch (e) {}
+            }
+
+            resources.push(getJacketUrl(id));
+            const possibleVocals = vocalMap.get(id) || vocalMap.get(Number(id)) || [];
+            possibleVocals.forEach(vocal => resources.push(getAudioBaseUrl(vocal)));
+            for (const resourceUrl of [...new Set(resources.filter(Boolean))]) await cache.delete(resourceUrl);
+            await cache.delete(metadataKey);
+
+            delete offlineSavedSongs[id];
+            if (!saveOfflineManifest()) throw new Error('保存情報の削除に失敗しました。');
+
+            if (String(pCurrentMusic?.id) === id) stopOfflineDeletedAudio(true);
+            if (String(mCurrentMusic?.id) === id) stopOfflineDeletedAudio(false);
+
+            updateOfflineSaveButtons(id);
+            renderOfflineSettings();
+            if (!options.silent) { renderList(); renderPlayerList(); }
+            await refreshOfflineStorageUsage();
+        }
+
+        function stopOfflineDeletedAudio(isMainPlayer) {
+            const audio = isMainPlayer ? pAudio : mAudio;
+            try { audio.pause(); } catch (e) {}
+            try { audio.removeAttribute('src'); audio.load(); } catch (e) {}
+            revokeAudioObjectUrl(isMainPlayer);
+            if (isMainPlayer) ++pAudioSourceToken; else ++mAudioSourceToken;
+            if (isMainPlayer) syncPlayerUI(); else syncModalUI();
+        }
+
+        async function toggleOfflineSong(music) {
+            const id = String(music?.id ?? '');
+            if (!id || offlineSavingIds.has(id)) return;
+            if (getOfflineRecord(id)) {
+                if (!confirm(`「${music.title || id}」のオフライン保存を削除しますか？`)) return;
+                try { await deleteOfflineSong(id); } catch (error) { console.error('Offline song delete failed:', error); alert('オフライン保存の削除に失敗しました。'); }
+                return;
+            }
+            try {
+                await saveSongOffline(music);
+                alert(`「${music.title || id}」をオフライン保存しました。`);
+            } catch (error) {
+                console.error('Offline song save failed:', error);
+                alert(error?.name === 'QuotaExceededError' ? '端末の保存容量が不足しています。不要な保存曲を削除してください。' : 'オフライン保存に失敗しました。通信状態と保存容量を確認してください。');
+                renderOfflineSettings();
+            }
+        }
+
+        async function reconcileOfflineManifest() {
+            if (!Object.keys(offlineSavedSongs).length || !('caches' in window)) return;
+            try {
+                const cache = await getOfflineCache();
+                let changed = false;
+                for (const id of Object.keys(offlineSavedSongs)) {
+                    const metadataResponse = await cache.match(getOfflineMetadataKey(id));
+                    if (!metadataResponse) {
+                        delete offlineSavedSongs[id];
+                        changed = true;
+                        continue;
+                    }
+                    let resources = offlineSavedSongs[id].resources || [];
+                    try {
+                        const metadata = await metadataResponse.clone().json();
+                        resources = Array.isArray(metadata.resources) ? metadata.resources.map(String).filter(Boolean) : resources;
+                    } catch (e) {}
+                    const checks = [getJacketUrl(id), ...resources];
+                    let missing = false;
+                    for (const url of [...new Set(checks.filter(Boolean))]) {
+                        if (!await cache.match(url)) { missing = true; break; }
+                    }
+                    if (missing) {
+                        delete offlineSavedSongs[id];
+                        changed = true;
+                    }
+                }
+                if (changed) saveOfflineManifest();
+            } catch (e) {
+                console.warn('Offline manifest reconciliation failed:', e);
+            }
+        }
+
+        async function renderOfflineSettings() {
+            const list = document.getElementById('offline-saved-song-list');
+            const count = document.getElementById('offline-saved-count');
+            const clearAll = document.getElementById('offline-delete-all-btn');
+            if (!list || !count) return;
+
+            const entries = Object.values(offlineSavedSongs).sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+            count.textContent = `${entries.length}曲`;
+            if (clearAll) clearAll.disabled = entries.length === 0;
+            list.innerHTML = '';
+
+            if (entries.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'settings-help';
+                empty.textContent = 'まだオフライン保存された曲はありません。';
+                list.appendChild(empty);
+            } else {
+                entries.forEach(record => {
+                    const row = document.createElement('div');
+                    row.className = 'offline-saved-song-item';
+                    const main = document.createElement('div');
+                    main.className = 'offline-saved-song-main';
+                    const title = document.createElement('div');
+                    title.className = 'offline-saved-song-title';
+                    title.textContent = record.title;
+                    title.title = record.title;
+                    const meta = document.createElement('div');
+                    meta.className = 'offline-saved-song-meta';
+                    meta.textContent = `${formatStorageBytes(record.sizeBytes)} / ${record.vocalCount || 0}ボーカル / ${record.savedAt ? new Date(record.savedAt).toLocaleString('ja-JP') : '保存日時不明'}`;
+                    main.append(title, meta);
+                    const actions = document.createElement('div');
+                    actions.className = 'offline-saved-song-actions';
+                    const del = document.createElement('button');
+                    del.type = 'button';
+                    del.className = 'icon-btn';
+                    del.title = 'オフライン保存を削除';
+                    del.setAttribute('aria-label', `${record.title}のオフライン保存を削除`);
+                    del.innerHTML = '<span class="material-icons-round">delete</span>';
+                    del.addEventListener('click', async () => {
+                        if (!confirm(`「${record.title}」のオフライン保存を削除しますか？`)) return;
+                        del.disabled = true;
+                        try { await deleteOfflineSong(record.id); } catch (error) { console.error('Offline song delete failed:', error); alert('オフライン保存の削除に失敗しました。'); del.disabled = false; }
+                    });
+                    actions.appendChild(del);
+                    row.append(main, actions);
+                    list.appendChild(row);
+                });
+            }
+            await refreshOfflineStorageUsage();
+        }
+
+        async function refreshOfflineStorageUsage() {
+            const valueEl = document.getElementById('offline-storage-value');
+            const detailEl = document.getElementById('offline-storage-detail');
+            if (!valueEl || !detailEl) return;
+            const manifestBytes = Object.values(offlineSavedSongs).reduce((sum, record) => sum + (Number(record.sizeBytes) || 0), 0);
+            if (navigator.storage?.estimate) {
+                try {
+                    const estimate = await navigator.storage.estimate();
+                    const usage = Number(estimate.usage) || 0;
+                    const quota = Number(estimate.quota) || 0;
+                    valueEl.textContent = quota ? `${formatStorageBytes(usage)} / ${formatStorageBytes(quota)}` : formatStorageBytes(usage);
+                    detailEl.textContent = quota ? `このページ（同一オリジン）が使用中の容量 / 上限。保存曲の記録値は約${formatStorageBytes(manifestBytes)}です。` : `このページ（同一オリジン）の使用量。保存曲の記録値は約${formatStorageBytes(manifestBytes)}です。`;
+                    return;
+                } catch (e) {}
+            }
+            valueEl.textContent = formatStorageBytes(manifestBytes);
+            detailEl.textContent = 'ブラウザから総使用量を取得できないため、保存曲の記録値を表示しています。';
+        }
+
+        async function deleteAllOfflineSongs() {
+            const entries = Object.values(offlineSavedSongs);
+            if (!entries.length) return;
+            if (!confirm(`オフライン保存した${entries.length}曲をすべて削除しますか？`)) return;
+            const ids = entries.map(record => record.id);
+            try {
+                for (const id of ids) await deleteOfflineSong(id, { silent: true });
+                renderList();
+                renderPlayerList();
+                await renderOfflineSettings();
+            } catch (error) {
+                console.error('Delete all offline songs failed:', error);
+                alert('オフライン保存の全削除に失敗しました。');
+                renderOfflineSettings();
+            }
+        }
+
+        async function fetchJsonWithOfflineCache(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
+                if ('caches' in window) {
+                    try {
+                        const dataCache = await caches.open(OFFLINE_DATA_CACHE_NAME);
+                        await dataCache.put(url, response.clone());
+                    } catch (cacheError) { console.warn('Offline JSON cache failed:', cacheError); }
+                }
+                return response.json();
+            } catch (networkError) {
+                if ('caches' in window) {
+                    try {
+                        const dataCache = await caches.open(OFFLINE_DATA_CACHE_NAME);
+                        const cached = await dataCache.match(url);
+                        if (cached) return cached.json();
+                    } catch (cacheError) { console.warn('Offline JSON fallback failed:', cacheError); }
+                }
+                throw networkError;
+            }
+        }
+
+        async function cacheCurrentPageForOffline() {
+            if (!('caches' in window) || window.location.protocol === 'file:') return;
+            try {
+                const shellCache = await caches.open(OFFLINE_SHELL_CACHE_NAME);
+                const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                await shellCache.put(window.location.href, new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+            } catch (e) { console.warn('Offline page cache failed:', e); }
+        }
+
+        function registerOfflineServiceWorker() {
+            if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+            navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(error => console.warn('Offline service worker registration failed:', error));
+        }
+
         const TAG_DEF = [
             { id: 'all', icon: 'apps', label: '全て' },
             { id: 'vocaloid', icon: 'mic', label: 'バチャシン' },
@@ -3702,31 +3597,35 @@
         async function init() {
             registerOfflineServiceWorker();
             try {
-                let loadedOnline = false;
-                try {
-                    const results = await Promise.all([
-                        fetch(`${DB_BASE}/musics.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
-                        fetch(`${DB_BASE}/musicDifficulties.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
-                        fetch(`${DB_BASE}/musicVocals.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
-                        fetch(`${DB_BASE}/gameCharacters.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
-                        fetch(`${DB_BASE}/outsideCharacters.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
-                        fetch(`${DB_BASE}/musicTags.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
-                        fetch(`${DB_BASE}/musicOriginals.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-                    ]);
-                    [musics, difficulties, vocals, gameChars, outsideChars, tags, originals] = results;
-                    diffMap = new Map(); vocalMap = new Map(); tagMap = new Map(); origMap = new Map(); gameCharMap = new Map(); outCharMap = new Map();
-                    difficulties.forEach(d => { if (!diffMap.has(d.musicId)) diffMap.set(d.musicId, {}); diffMap.get(d.musicId)[d.musicDifficulty] = d; });
-                    vocals.forEach(v => { if (!vocalMap.has(v.musicId)) vocalMap.set(v.musicId, []); vocalMap.get(v.musicId).push(v); });
-                    tags.forEach(t => { if (!tagMap.has(t.musicId)) tagMap.set(t.musicId, []); tagMap.get(t.musicId).push(t.musicTag); });
-                    originals.forEach(o => origMap.set(o.musicId, o.videoLink));
-                    gameChars.forEach(c => gameCharMap.set(c.id, c));
-                    outsideChars.forEach(c => outCharMap.set(c.id, c));
-                    loadedOnline = true;
-                } catch (networkErr) {
-                    console.warn('Online database unavailable; trying saved song cache.', networkErr);
-                    await loadOfflineMusicDatabase();
-                }
+                const results = await Promise.all([
+                    fetchJsonWithOfflineCache(`${DB_BASE}/musics.json`),
+                    fetchJsonWithOfflineCache(`${DB_BASE}/musicDifficulties.json`),
+                    fetchJsonWithOfflineCache(`${DB_BASE}/musicVocals.json`),
+                    fetchJsonWithOfflineCache(`${DB_BASE}/gameCharacters.json`),
+                    fetchJsonWithOfflineCache(`${DB_BASE}/outsideCharacters.json`),
+                    fetchJsonWithOfflineCache(`${DB_BASE}/musicTags.json`),
+                    fetchJsonWithOfflineCache(`${DB_BASE}/musicOriginals.json`)
+                ]);
 
+                [musics, difficulties, vocals, gameChars, outsideChars, tags, originals] = results;
+
+                difficulties.forEach(d => {
+                    if (!diffMap.has(d.musicId)) diffMap.set(d.musicId, {});
+                    diffMap.get(d.musicId)[d.musicDifficulty] = d;
+                });
+                vocals.forEach(v => {
+                    if (!vocalMap.has(v.musicId)) vocalMap.set(v.musicId, []);
+                    vocalMap.get(v.musicId).push(v);
+                });
+                tags.forEach(t => {
+                    if (!tagMap.has(t.musicId)) tagMap.set(t.musicId, []);
+                    tagMap.get(t.musicId).push(t.musicTag);
+                });
+                originals.forEach(o => origMap.set(o.musicId, o.videoLink));
+                gameChars.forEach(c => gameCharMap.set(c.id, c));
+                outsideChars.forEach(c => outCharMap.set(c.id, c));
+
+                await reconcileOfflineManifest();
                 loadPlaylists();
                 activePlaylistId = DEFAULT_PLAYLIST_ID;
 
@@ -3735,15 +3634,12 @@
                 updateRepeatShuffleUI();
                 renderList();
                 renderPlayerList();
-                await refreshCachedMusicIdsFromCache();
-                renderList();
-                renderPlayerList();
-                renderCachedMusicList();
-                updateCachedMusicButtons();
+                renderOfflineSettings();
+                cacheCurrentPageForOffline();
                 document.getElementById('loading').style.display = 'none';
             } catch (err) {
                 console.error(err);
-                alert('データの読み込みに失敗しました。オンライン接続がない場合は、先に楽曲を保存してください。');
+                alert('データの読み込みに失敗しました。');
             }
         }
 
@@ -4478,9 +4374,7 @@
                 document.getElementById('p-filter-panel').classList.remove('show');
                 updateMiniPlayerVisibility();
                 updateSpeechSettingsUI();
-                renderCachedMusicList();
-                updateCachedMusicButtons();
-                refreshStorageInfo();
+                renderOfflineSettings();
                 syncMenuActive('settings');
                 window.scrollTo({ top: 0, behavior: 'auto' });
                 closeSideMenu();
@@ -4495,6 +4389,7 @@
                 playerOnlyControls.style.display = 'none';
                 updateMiniPlayerVisibility();
                 updateSpeechSettingsUI();
+                renderOfflineSettings();
                 syncMenuActive('settings');
                 window.scrollTo({ top: 0, behavior: 'auto' });
                 closeSideMenu();
@@ -4536,18 +4431,6 @@
                 });
             }
 
-            const clearAllCachedMusic = document.getElementById('clear-all-cached-music');
-            if (clearAllCachedMusic) clearAllCachedMusic.addEventListener('click', clearAllMusicPageCache);
-            const refreshStorage = document.getElementById('refresh-storage-info');
-            if (refreshStorage) refreshStorage.addEventListener('click', refreshStorageInfo);
-
-            registerOfflineServiceWorker();
-            refreshCachedMusicIdsFromCache().then(() => {
-                renderCachedMusicList();
-                updateCachedMusicButtons();
-                return refreshStorageInfo();
-            });
-
             const vocalSel = document.getElementById('default-vocal-select');
             if (vocalSel) {
                 vocalSel.value = defaultVocalPref;
@@ -4557,7 +4440,13 @@
                 });
             }
 
+            const offlineRefreshBtn = document.getElementById('offline-refresh-btn');
+            if (offlineRefreshBtn) offlineRefreshBtn.addEventListener('click', () => renderOfflineSettings());
+            const offlineDeleteAllBtn = document.getElementById('offline-delete-all-btn');
+            if (offlineDeleteAllBtn) offlineDeleteAllBtn.addEventListener('click', deleteAllOfflineSongs);
+
             updateSpeechSettingsUI();
+            renderOfflineSettings();
 
             const enabledToggle = document.getElementById('speech-enabled-toggle');
             if (enabledToggle) {
@@ -4899,7 +4788,7 @@
                         <div class="meta" title="${meta.text}">${meta.html}</div>
                     </div>
                 `;
-                el.appendChild(createMusicItemCacheButton(m));
+                el.appendChild(createOfflineSaveButton(m));
                 fragment.appendChild(el);
             });
             container.appendChild(fragment);
@@ -4933,7 +4822,7 @@
                         <div class="meta" title="${meta.text}">${meta.html}</div>
                     </div>
                 `;
-                el.appendChild(createMusicItemCacheButton(m));
+                el.appendChild(createOfflineSaveButton(m));
                 fragment.appendChild(el);
             });
             container.appendChild(fragment);
@@ -5156,10 +5045,17 @@
 
         document.getElementById('btn-close-modal').addEventListener('click', () => {
             document.getElementById('detail-modal').classList.remove('show');
+            ++mAudioSourceToken;
             mAudio.pause();
             mIsSeeking = false;
             try { mAudio.currentTime = 0; } catch (e) {}
+            revokeAudioObjectUrl(false);
             syncModalUI();
+        });
+
+        window.addEventListener('pagehide', () => {
+            revokeAudioObjectUrl(true);
+            revokeAudioObjectUrl(false);
         });
 
         function updatePlayerPageInfo() {
@@ -5238,7 +5134,37 @@
             if (playerVisible) renderPlayerList();
         }
 
-        function loadPlayerAudio(music, vocal, autoPlay = false) {
+        async function getPlaybackAudioUrl(music, vocal) {
+            const baseUrl = getAudioBaseUrl(vocal);
+            if (!getOfflineRecord(music?.id) || !('caches' in window)) return { url: baseUrl, objectUrl: false };
+            try {
+                const cache = await getOfflineCache();
+                const cachedResponse = await cache.match(baseUrl);
+                if (!cachedResponse) return { url: baseUrl, objectUrl: false };
+                const blob = await cachedResponse.blob();
+                if (!blob.size) return { url: baseUrl, objectUrl: false };
+                return { url: URL.createObjectURL(blob), objectUrl: true };
+            } catch (e) {
+                console.warn(`Offline audio cache read failed for ${baseUrl}:`, e);
+                return { url: baseUrl, objectUrl: false };
+            }
+        }
+
+        function revokeAudioObjectUrl(isMainPlayer) {
+            if (isMainPlayer) {
+                if (pAudioObjectUrl) {
+                    URL.revokeObjectURL(pAudioObjectUrl);
+                    pAudioObjectUrl = null;
+                }
+            } else if (mAudioObjectUrl) {
+                URL.revokeObjectURL(mAudioObjectUrl);
+                mAudioObjectUrl = null;
+            }
+        }
+
+        async function loadPlayerAudio(music, vocal, autoPlay = false) {
+            if (!music || !vocal) return;
+            const token = ++pAudioSourceToken;
             pCurrentMusic = music;
             pCurrentVocal = vocal;
             pAudioRetryCount = 0;
@@ -5246,14 +5172,20 @@
             pSpeechAnnouncedForCurrentTrack = false;
             pSpeechTrackEndedWaiting = false;
             cancelPlayerSpeech();
-            const baseUrl = getAudioBaseUrl(vocal);
+            pAudio.pause();
+            const resolved = await getPlaybackAudioUrl(music, vocal);
+            if (token !== pAudioSourceToken || pCurrentMusic !== music || pCurrentVocal !== vocal) {
+                if (resolved.objectUrl) URL.revokeObjectURL(resolved.url);
+                return;
+            }
 
-            const currentUrl = pAudio.src ? pAudio.src.split('?')[0] : '';
-            const isNewSrc = currentUrl !== baseUrl;
-
+            const currentUrl = pAudio.src || '';
+            const isNewSrc = currentUrl !== resolved.url;
             if (isNewSrc) {
                 pAudio.pause();
-                pAudio.src = baseUrl;
+                revokeAudioObjectUrl(true);
+                pAudio.src = resolved.url;
+                if (resolved.objectUrl) pAudioObjectUrl = resolved.url;
                 try { pAudio.currentTime = 0; } catch (e) {}
                 pAudio.load();
             } else if (pAudio.ended) {
@@ -5261,12 +5193,9 @@
             }
 
             setupMediaSession(music, vocal, pAudio, true);
-            updatePlayerPageInfo(); 
+            updatePlayerPageInfo();
             syncPlayerUI();
-
-            if (autoPlay) {
-                startPlayerPlay();
-            }
+            if (autoPlay) startPlayerPlay();
         }
 
         function startPlayerPlay() {
@@ -5295,6 +5224,10 @@
                         if (e.name !== 'NotAllowedError' && pAudioRetryCount < 2 && pCurrentVocal) {
                             pAudioRetryCount++;
                             const baseUrl = getAudioBaseUrl(pCurrentVocal);
+                            if (getOfflineRecord(pCurrentMusic?.id)) {
+                                syncPlayerUI();
+                                return;
+                            }
                             const savedTime = isFinite(pAudio.currentTime) ? pAudio.currentTime : 0;
                             pAudio.src = `${baseUrl}?t=${Date.now()}`;
                             pAudio.load();
@@ -5390,18 +5323,26 @@
             loadPlayerAudio(prevMusic, prevVocal, true);
         }
 
-        function loadModalAudio(music, vocal, autoPlay = false) {
+        async function loadModalAudio(music, vocal, autoPlay = false) {
+            if (!music || !vocal) return;
+            const token = ++mAudioSourceToken;
             mCurrentMusic = music;
             mCurrentVocal = vocal;
-            mAudioRetryCount = 0; 
-            const baseUrl = getAudioBaseUrl(vocal);
-            
-            const currentUrl = mAudio.src ? mAudio.src.split('?')[0] : '';
-            const isNewSrc = currentUrl !== baseUrl;
-            
+            mAudioRetryCount = 0;
+            mAudio.pause();
+            const resolved = await getPlaybackAudioUrl(music, vocal);
+            if (token !== mAudioSourceToken || mCurrentMusic !== music || mCurrentVocal !== vocal) {
+                if (resolved.objectUrl) URL.revokeObjectURL(resolved.url);
+                return;
+            }
+
+            const currentUrl = mAudio.src || '';
+            const isNewSrc = currentUrl !== resolved.url;
             if (isNewSrc) {
                 mAudio.pause();
-                mAudio.src = baseUrl;
+                revokeAudioObjectUrl(false);
+                mAudio.src = resolved.url;
+                if (resolved.objectUrl) mAudioObjectUrl = resolved.url;
                 try { mAudio.currentTime = 0; } catch (e) {}
                 mAudio.load();
             } else if (mAudio.ended) {
@@ -5409,17 +5350,10 @@
             }
 
             setupMediaSession(music, vocal, mAudio, false);
-            
             const mVSel = document.getElementById('modal-vocal-selector');
-            if (mVSel) {
-                createVocalSelectorDOM(mVSel, music, vocalMap.get(music.id) || [], true);
-            }
-
+            if (mVSel) createVocalSelectorDOM(mVSel, music, vocalMap.get(music.id) || [], true);
             syncModalUI();
-
-            if (autoPlay) {
-                startModalPlay();
-            }
+            if (autoPlay) startModalPlay();
         }
 
         function startModalPlay() {
@@ -5446,6 +5380,10 @@
                         if (e.name !== 'NotAllowedError' && mAudioRetryCount < 2 && mCurrentVocal) {
                             mAudioRetryCount++;
                             const baseUrl = getAudioBaseUrl(mCurrentVocal);
+                            if (getOfflineRecord(mCurrentMusic?.id)) {
+                                syncModalUI();
+                                return;
+                            }
                             const savedTime = isFinite(mAudio.currentTime) ? mAudio.currentTime : 0;
                             mAudio.src = `${baseUrl}?t=${Date.now()}`;
                             mAudio.load();
