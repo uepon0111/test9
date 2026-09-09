@@ -728,6 +728,15 @@
             object-fit: cover;
             border-radius: var(--radius-sm);
             margin-bottom: 8px;
+            display: block;
+            background: var(--secondary-bg);
+        }
+
+        .music-list-render-sentinel {
+            width: 100%;
+            height: 1px;
+            pointer-events: none;
+            contain: strict;
         }
         .music-item .info-container {
             width: 100%;
@@ -1085,6 +1094,8 @@
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-md);
             object-fit: cover;
+            display: block;
+            background: var(--secondary-bg);
         }
 
         .vocal-selector {
@@ -2239,6 +2250,50 @@
         let diffMap = new Map(), vocalMap = new Map(), tagMap = new Map(), origMap = new Map();
         let gameCharMap = new Map(), outCharMap = new Map();
 
+        // --- Performance indexes/cache ---
+        // 楽曲データ自体は不変として扱い、検索・絞り込み・ソートで再計算しない。
+        let musicById = new Map();
+        let musicIdSet = new Set();
+        const filterResultCache = new Map();
+        const playlistTrackListCache = new Map();
+        const FILTER_CACHE_LIMIT = 24;
+        const PLAYLIST_TRACK_CACHE_LIMIT = 12;
+
+        const mainListRenderState = {
+            observer: null,
+            sentinel: null,
+            items: [],
+            nextIndex: 0,
+            token: 0
+        };
+        const playerListRenderState = {
+            observer: null,
+            sentinel: null,
+            items: [],
+            nextIndex: 0,
+            token: 0
+        };
+        const playlistPickerRenderState = {
+            observer: null,
+            sentinel: null,
+            items: [],
+            nextIndex: 0,
+            token: 0
+        };
+
+        const LIST_INITIAL_BATCH = 160;
+        const LIST_APPEND_BATCH = 100;
+        const PLAYER_LIST_INITIAL_BATCH = 120;
+        const PLAYER_LIST_APPEND_BATCH = 80;
+        const PICKER_INITIAL_BATCH = 40;
+        const PICKER_APPEND_BATCH = 30;
+        const RENDER_ROOT_MARGIN = '900px';
+
+        let playlistPickerRenderDebounceTimer = null;
+        let pNextAudioPrefetch = null;
+        let pNextAudioPrefetchUrl = '';
+        let pNextAudioPrefetchTimer = null;
+
         let currentLayout = 'layout-3';
         let searchTerm = '';
         let searchOperator = 'and';
@@ -2631,13 +2686,12 @@
         }
 
         function normalizePlaylistTracks(rawTracks, rawSongIds) {
-            const validIds = new Set(musics.map(m => String(m.id)));
             const result = [];
             const seen = new Set();
             const addTrack = (songId, vocalKey) => {
                 const sid = String(songId || '');
                 const vk = String(vocalKey || '');
-                if (!sid || !validIds.has(sid) || !vk) return;
+                if (!sid || !musicIdSet.has(sid) || !vk) return;
                 const vocal = getVocalByKey(sid, vk);
                 if (!vocal) return;
                 const key = makePlaylistTrackKey(sid, vk);
@@ -2656,7 +2710,7 @@
             // 旧形式(songIdsのみ)は従来どおり各曲のデフォルトボーカルとして移行する。
             if (result.length === 0 && Array.isArray(rawSongIds)) {
                 rawSongIds.map(String).forEach(songId => {
-                    const music = musics.find(m => String(m.id) === songId);
+                    const music = musicById.get(songId);
                     if (!music) return;
                     const fallback = makeDefaultPlaylistTrack(music);
                     if (fallback) addTrack(fallback.songId, fallback.vocalKey);
@@ -2679,12 +2733,11 @@
             const id = raw.id ? String(raw.id) : `playlist-${Date.now()}-${index}`;
             const isDefault = id === DEFAULT_PLAYLIST_ID || raw.default === true;
             const ids = Array.isArray(raw.songIds) ? raw.songIds.map(String) : [];
-            const validIds = new Set(musics.map(m => String(m.id)));
-            const legacySongIds = [...new Set(ids)].filter(id2 => validIds.has(id2));
+            const legacySongIds = [...new Set(ids)].filter(id2 => musicIdSet.has(id2));
             const tracks = isDefault ? [] : normalizePlaylistTracks(raw.tracks, legacySongIds);
             const songIds = isDefault
                 ? musics.map(m => String(m.id))
-                : [...new Set((tracks.length ? tracks.map(t => t.songId) : legacySongIds).map(String))].filter(id2 => validIds.has(id2));
+                : [...new Set((tracks.length ? tracks.map(t => t.songId) : legacySongIds).map(String))].filter(id2 => musicIdSet.has(id2));
             const validOperators = ['and', 'or', 'nand', 'nor'];
             const validSortKeys = ['id', 'title', 'publishedAt', 'level'];
             const validDiffs = ['easy', 'normal', 'hard', 'expert', 'master', 'append'];
@@ -2731,6 +2784,7 @@
         }
 
         function savePlaylists() {
+            playlistTrackListCache.clear();
             // 保存前にカスタム再生リストのsongIdsをtracksから同期し、旧形式との互換性も維持する。
             playlists.forEach(playlist => {
                 if (playlist.default) {
@@ -2802,8 +2856,39 @@
             return getPlaylistSongPool(getActivePlaylist());
         }
 
+        function makePlaylistTrackListCacheKey(playlist) {
+            if (!playlist) return '';
+            const tracks = playlist.default
+                ? []
+                : (Array.isArray(playlist.tracks) ? playlist.tracks : []).map(t => [String(t.songId), String(t.vocalKey)]);
+            return JSON.stringify([
+                String(playlist.id),
+                !!playlist.default,
+                tracks,
+                Array.isArray(playlist.songIds) ? playlist.songIds.map(String) : [],
+                String(playlist.searchTerm || ''),
+                String(playlist.searchOperator || 'and'),
+                Array.isArray(playlist.activeTag) ? [...playlist.activeTag].map(String).sort() : [],
+                String(playlist.activeWritten || 'all'),
+                Array.isArray(playlist.selectedChars) ? [...playlist.selectedChars].map(String).sort() : [],
+                String(playlist.sortKey || 'publishedAt'),
+                playlist.sortOrder === 'asc' ? 'asc' : 'desc',
+                String(playlist.sortDiff || 'easy'),
+                String(playlist.publishedFrom || ''),
+                String(playlist.publishedTo || '')
+            ]);
+        }
+
         function getPlaylistTrackList(playlist) {
             if (!playlist) return [];
+            const cacheKey = makePlaylistTrackListCacheKey(playlist);
+            const cached = playlistTrackListCache.get(cacheKey);
+            if (cached) {
+                playlistTrackListCache.delete(cacheKey);
+                playlistTrackListCache.set(cacheKey, cached);
+                return cached;
+            }
+
             const filteredSongs = getFilteredAndSortedList(
                 playlist.searchTerm || '',
                 playlist.searchOperator || 'and',
@@ -2816,11 +2901,14 @@
                 playlist.publishedFrom || '',
                 playlist.publishedTo || ''
             );
-            const poolIds = new Set(getPlaylistSongPool(playlist).map(m => String(m.id)));
-            const filteredPool = filteredSongs.filter(m => poolIds.has(String(m.id)));
+            const poolIds = playlist.default ? null : new Set((playlist.songIds || []).map(String));
+            const filteredPool = playlist.default
+                ? filteredSongs
+                : filteredSongs.filter(m => poolIds.has(String(m.id)));
 
+            let result;
             if (playlist.default) {
-                return filteredPool.map(m => {
+                result = filteredPool.map(m => {
                     const vocal = getDefaultVocal(m, vocalMap.get(m.id) || []);
                     return vocal ? {
                         music: m,
@@ -2828,31 +2916,37 @@
                         trackKey: makePlaylistTrackKey(m.id, vocal)
                     } : null;
                 }).filter(Boolean);
-            }
+            } else {
+                const selectedTracks = Array.isArray(playlist.tracks) && playlist.tracks.length
+                    ? playlist.tracks
+                    : normalizePlaylistTracks([], playlist.songIds || []);
+                const tracksBySong = new Map();
+                selectedTracks.forEach(track => {
+                    const sid = String(track.songId);
+                    if (!tracksBySong.has(sid)) tracksBySong.set(sid, []);
+                    tracksBySong.get(sid).push(track);
+                });
 
-            const selectedTracks = Array.isArray(playlist.tracks) && playlist.tracks.length
-                ? playlist.tracks
-                : normalizePlaylistTracks([], playlist.songIds || []);
-            const tracksBySong = new Map();
-            selectedTracks.forEach(track => {
-                const sid = String(track.songId);
-                if (!tracksBySong.has(sid)) tracksBySong.set(sid, []);
-                tracksBySong.get(sid).push(track);
-            });
-
-            const result = [];
-            filteredPool.forEach(m => {
-                const bySong = tracksBySong.get(String(m.id)) || [];
-                bySong.forEach(track => {
-                    const vocal = getVocalByKey(m.id, track.vocalKey);
-                    if (!vocal) return;
-                    result.push({
-                        music: m,
-                        vocal,
-                        trackKey: makePlaylistTrackKey(m.id, vocal)
+                result = [];
+                filteredPool.forEach(m => {
+                    const bySong = tracksBySong.get(String(m.id)) || [];
+                    bySong.forEach(track => {
+                        const vocal = getVocalByKey(m.id, track.vocalKey);
+                        if (!vocal) return;
+                        result.push({
+                            music: m,
+                            vocal,
+                            trackKey: makePlaylistTrackKey(m.id, vocal)
+                        });
                     });
                 });
-            });
+            }
+
+            playlistTrackListCache.delete(cacheKey);
+            playlistTrackListCache.set(cacheKey, result);
+            while (playlistTrackListCache.size > PLAYLIST_TRACK_CACHE_LIMIT) {
+                playlistTrackListCache.delete(playlistTrackListCache.keys().next().value);
+            }
             return result;
         }
 
@@ -3057,90 +3151,159 @@
             updatePlaylistPickerCounts();
         }
 
+        function updatePlaylistPickerSongRow(row, m, mVocals) {
+            if (!row) return;
+            const selectedVocalCount = mVocals.reduce((count, v) =>
+                count + (playlistPickerSelectedIds.has(makePlaylistTrackKey(m.id, v)) ? 1 : 0), 0);
+            const songSelection = row.querySelector('[data-role="song-selection"]');
+            if (songSelection) {
+                songSelection.checked = mVocals.length > 0 && selectedVocalCount === mVocals.length;
+                songSelection.indeterminate = selectedVocalCount > 0 && selectedVocalCount < mVocals.length;
+            }
+            row.querySelectorAll('[data-role="vocal-selection"]').forEach(input => {
+                input.checked = playlistPickerSelectedIds.has(input.dataset.trackKey || '');
+            });
+        }
+
+        function createPlaylistPickerItem(m) {
+            const item = document.createElement('div');
+            item.className = 'playlist-picker-item';
+            item.dataset.songId = String(m.id);
+            const mVocals = vocalMap.get(m.id) || [];
+
+            const songRow = document.createElement('div');
+            songRow.className = 'playlist-picker-song-row';
+
+            const songSelection = document.createElement('input');
+            songSelection.type = 'checkbox';
+            songSelection.tabIndex = -1;
+            songSelection.dataset.role = 'song-selection';
+            songSelection.title = 'この曲のボーカルをすべて選択';
+            songSelection.addEventListener('change', () => {
+                mVocals.forEach(v => {
+                    const key = makePlaylistTrackKey(m.id, v.assetbundleName);
+                    if (songSelection.checked) playlistPickerSelectedIds.add(key);
+                    else playlistPickerSelectedIds.delete(key);
+                });
+                updatePlaylistPickerSongRow(item, m, mVocals);
+                updatePlaylistPickerCounts();
+            });
+
+            const img = document.createElement('img');
+            img.src = getJacketUrl(m.id);
+            img.alt = 'jacket';
+            img.loading = 'lazy';
+            img.fetchPriority = 'low';
+            img.decoding = 'async';
+            img.onerror = () => handleImageError(img);
+
+            const text = document.createElement('div');
+            text.className = 'playlist-picker-item-text';
+            const title = document.createElement('div');
+            title.className = 'playlist-picker-item-title';
+            title.textContent = m.title;
+            const meta = document.createElement('div');
+            meta.className = 'playlist-picker-item-meta';
+            meta.textContent = `ID: ${m.id} ・ ボーカル ${mVocals.length}種`;
+            text.append(title, meta);
+            songRow.append(songSelection, img, text);
+            item.appendChild(songRow);
+
+            if (mVocals.length > 0) {
+                const vocalList = document.createElement('div');
+                vocalList.className = 'playlist-picker-vocal-list';
+                mVocals.forEach(v => {
+                    const vocalLabel = document.createElement('label');
+                    vocalLabel.className = 'playlist-picker-vocal-option';
+                    vocalLabel.title = getVocalDisplayName(v);
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.dataset.role = 'vocal-selection';
+                    checkbox.dataset.trackKey = makePlaylistTrackKey(m.id, v.assetbundleName);
+                    checkbox.addEventListener('change', () => {
+                        togglePlaylistPickerSongVocal(m.id, v.assetbundleName, checkbox.checked);
+                        updatePlaylistPickerSongRow(item, m, mVocals);
+                    });
+
+                    const labelText = document.createElement('span');
+                    labelText.className = 'playlist-picker-vocal-label';
+                    labelText.textContent = getVocalDisplayName(v);
+
+                    vocalLabel.append(checkbox, labelText);
+                    vocalList.appendChild(vocalLabel);
+                });
+                item.appendChild(vocalList);
+            } else {
+                const noVocal = document.createElement('div');
+                noVocal.className = 'playlist-picker-no-vocal';
+                noVocal.textContent = 'ボーカル情報がありません';
+                item.appendChild(noVocal);
+            }
+
+            updatePlaylistPickerSongRow(item, m, mVocals);
+            return item;
+        }
+
         function renderPlaylistPickerList() {
             const container = document.getElementById('playlist-picker-list');
             if (!container) return;
+            if (playlistPickerRenderDebounceTimer) {
+                clearTimeout(playlistPickerRenderDebounceTimer);
+                playlistPickerRenderDebounceTimer = null;
+            }
+
             const term = playlistPickerSearchTerm.trim().toLowerCase();
-            const visible = musics.filter(m => {
-                const mVocals = vocalMap.get(m.id) || [];
-                if (!term) return true;
-                const vocalText = mVocals.map(getVocalDisplayName).join(' ');
-                return [m.title, m.pronunciation, m.lyricist, m.composer, m.arranger, vocalText]
-                    .join(' ').toLowerCase().includes(term);
-            });
+            const visible = term
+                ? musics.filter(m => m._pickerSearchText.includes(term))
+                : musics;
+
+            disconnectProgressiveObserver(playlistPickerRenderState);
             container.innerHTML = '';
+            playlistPickerRenderState.items = visible;
 
-            visible.forEach(m => {
-                const item = document.createElement('div');
-                item.className = 'playlist-picker-item';
-
-                const songRow = document.createElement('div');
-                songRow.className = 'playlist-picker-song-row';
-
-                const songSelection = document.createElement('input');
-                songSelection.type = 'checkbox';
-                songSelection.tabIndex = -1;
-                const mVocals = vocalMap.get(m.id) || [];
-                songSelection.checked = mVocals.length > 0 && mVocals.every(v => playlistPickerSelectedIds.has(makePlaylistTrackKey(m.id, v)));
-                songSelection.indeterminate = mVocals.some(v => playlistPickerSelectedIds.has(makePlaylistTrackKey(m.id, v))) && !songSelection.checked;
-                songSelection.title = 'この曲のボーカルをすべて選択';
-                songSelection.addEventListener('change', () => {
-                    mVocals.forEach(v => togglePlaylistPickerSongVocal(m.id, v.assetbundleName, songSelection.checked));
-                    renderPlaylistPickerList();
-                });
-
-                const img = document.createElement('img');
-                img.src = getJacketUrl(m.id);
-                img.alt = 'jacket';
-                img.loading = 'lazy';
-                img.onerror = () => handleImageError(img);
-
-                const text = document.createElement('div');
-                text.className = 'playlist-picker-item-text';
-                const title = document.createElement('div');
-                title.className = 'playlist-picker-item-title';
-                title.textContent = m.title;
-                const meta = document.createElement('div');
-                meta.className = 'playlist-picker-item-meta';
-                meta.textContent = `ID: ${m.id} ・ ボーカル ${mVocals.length}種`;
-                text.append(title, meta);
-                songRow.append(songSelection, img, text);
-                item.appendChild(songRow);
-
-                if (mVocals.length > 0) {
-                    const vocalList = document.createElement('div');
-                    vocalList.className = 'playlist-picker-vocal-list';
-                    mVocals.forEach(v => {
-                        const vocalLabel = document.createElement('label');
-                        vocalLabel.className = 'playlist-picker-vocal-option';
-                        vocalLabel.title = getVocalDisplayName(v);
-
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.checked = playlistPickerSelectedIds.has(makePlaylistTrackKey(m.id, v));
-                        checkbox.addEventListener('change', () => {
-                            togglePlaylistPickerSongVocal(m.id, v.assetbundleName, checkbox.checked);
-                            renderPlaylistPickerList();
-                        });
-
-                        const labelText = document.createElement('span');
-                        labelText.className = 'playlist-picker-vocal-label';
-                        labelText.textContent = getVocalDisplayName(v);
-
-                        vocalLabel.append(checkbox, labelText);
-                        vocalList.appendChild(vocalLabel);
-                    });
-                    item.appendChild(vocalList);
-                } else {
-                    const noVocal = document.createElement('div');
-                    noVocal.className = 'playlist-picker-no-vocal';
-                    noVocal.textContent = 'ボーカル情報がありません';
-                    item.appendChild(noVocal);
+            const appendPickerItems = () => {
+                const batchSize = playlistPickerRenderState.nextIndex === 0 ? PICKER_INITIAL_BATCH : PICKER_APPEND_BATCH;
+                const end = Math.min(playlistPickerRenderState.nextIndex + batchSize, playlistPickerRenderState.items.length);
+                const fragment = document.createDocumentFragment();
+                for (let i = playlistPickerRenderState.nextIndex; i < end; i++) {
+                    fragment.appendChild(createPlaylistPickerItem(playlistPickerRenderState.items[i]));
                 }
+                playlistPickerRenderState.nextIndex = end;
+                if (playlistPickerRenderState.sentinel && playlistPickerRenderState.sentinel.parentNode === container) {
+                    container.insertBefore(fragment, playlistPickerRenderState.sentinel);
+                } else {
+                    container.appendChild(fragment);
+                }
+                if (playlistPickerRenderState.nextIndex >= playlistPickerRenderState.items.length) {
+                    if (playlistPickerRenderState.observer) {
+                        playlistPickerRenderState.observer.disconnect();
+                        playlistPickerRenderState.observer = null;
+                    }
+                    if (playlistPickerRenderState.sentinel?.parentNode === container) playlistPickerRenderState.sentinel.remove();
+                    playlistPickerRenderState.sentinel = null;
+                }
+                updatePlaylistPickerCounts();
+            };
 
-                container.appendChild(item);
-            });
-            updatePlaylistPickerCounts();
+            appendPickerItems();
+            if (playlistPickerRenderState.nextIndex < playlistPickerRenderState.items.length) {
+                const sentinel = document.createElement('div');
+                sentinel.className = 'music-list-render-sentinel';
+                playlistPickerRenderState.sentinel = sentinel;
+                container.appendChild(sentinel);
+                if (!createProgressiveObserver(playlistPickerRenderState, sentinel, appendPickerItems)) {
+                    while (playlistPickerRenderState.nextIndex < playlistPickerRenderState.items.length) appendPickerItems();
+                }
+            }
+        }
+
+        function schedulePlaylistPickerSearchRender() {
+            if (playlistPickerRenderDebounceTimer) clearTimeout(playlistPickerRenderDebounceTimer);
+            playlistPickerRenderDebounceTimer = setTimeout(() => {
+                playlistPickerRenderDebounceTimer = null;
+                renderPlaylistPickerList();
+            }, 140);
         }
 
         function updatePlaylistPickerCounts() {
@@ -3518,16 +3681,89 @@
             updateRepeatShuffleUI();
         }
 
+        function buildMusicPerformanceIndexes() {
+            musicById = new Map();
+            musicIdSet = new Set();
+            filterResultCache.clear();
+            playlistTrackListCache.clear();
+
+            musics.forEach(m => {
+                const id = String(m.id);
+                musicById.set(id, m);
+                musicIdSet.add(id);
+                const textParts = [m.title, m.pronunciation, m.lyricist, m.composer, m.arranger];
+                m._searchText = textParts.map(v => String(v ?? '')).join(' ').toLowerCase();
+                m._pickerSearchText = m._searchText;
+                m._sortTitle = String(m.pronunciation || m.title || '');
+                m._publishedAt = m.publishedAt || 0;
+                m._tagSet = new Set((tagMap.get(m.id) || []).map(String));
+                m._characterKeys = new Set();
+                (vocalMap.get(m.id) || []).forEach(v => {
+                    (v.characters || []).forEach(c => {
+                        const type = c.characterType === 'game_character' ? 'game' : 'outside';
+                        m._characterKeys.add(`${type}_${c.characterId}`);
+                    });
+                });
+                const vocalText = (vocalMap.get(m.id) || []).map(getVocalDisplayName).join(' ');
+                m._pickerSearchText = `${m._searchText} ${vocalText}`.toLowerCase();
+                m._difficultyLevels = Object.create(null);
+                const d = diffMap.get(m.id) || {};
+                Object.keys(d).forEach(key => {
+                    m._difficultyLevels[key] = d[key];
+                });
+                const tagId = (tagMap.get(m.id) || []).find(t => String(t) !== 'all') || 'other';
+                m._tagLabel = TAG_DEF.find(t => t.id === tagId)?.label || 'その他';
+            });
+        }
+
+        function makeFilterCacheKey(search, searchMode, aTag, aWritten, sChars, sKey, sOrder, sDiff, publishedFromValue, publishedToValue) {
+            const tags = aTag instanceof Set ? [...aTag].sort() : [String(aTag ?? 'all')];
+            const chars = sChars instanceof Set ? [...sChars].sort() : [];
+            return JSON.stringify([
+                String(search || ''),
+                ['and', 'or', 'nand', 'nor'].includes(searchMode) ? searchMode : 'and',
+                tags,
+                String(aWritten || 'all'),
+                chars,
+                String(sKey || 'publishedAt'),
+                String(sOrder || 'desc'),
+                String(sDiff || 'easy'),
+                String(publishedFromValue || ''),
+                String(publishedToValue || '')
+            ]);
+        }
+
+        function getCachedFilterResult(key) {
+            const cached = filterResultCache.get(key);
+            if (!cached) return null;
+            filterResultCache.delete(key);
+            filterResultCache.set(key, cached);
+            return cached;
+        }
+
+        function setCachedFilterResult(key, value) {
+            filterResultCache.delete(key);
+            filterResultCache.set(key, value);
+            while (filterResultCache.size > FILTER_CACHE_LIMIT) {
+                filterResultCache.delete(filterResultCache.keys().next().value);
+            }
+        }
+
         async function init() {
             try {
+                const fetchJson = async (url) => {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
+                    return response.json();
+                };
                 const results = await Promise.all([
-                    fetch(`${DB_BASE}/musics.json`).then(r => r.json()),
-                    fetch(`${DB_BASE}/musicDifficulties.json`).then(r => r.json()),
-                    fetch(`${DB_BASE}/musicVocals.json`).then(r => r.json()),
-                    fetch(`${DB_BASE}/gameCharacters.json`).then(r => r.json()),
-                    fetch(`${DB_BASE}/outsideCharacters.json`).then(r => r.json()),
-                    fetch(`${DB_BASE}/musicTags.json`).then(r => r.json()),
-                    fetch(`${DB_BASE}/musicOriginals.json`).then(r => r.json())
+                    fetchJson(`${DB_BASE}/musics.json`),
+                    fetchJson(`${DB_BASE}/musicDifficulties.json`),
+                    fetchJson(`${DB_BASE}/musicVocals.json`),
+                    fetchJson(`${DB_BASE}/gameCharacters.json`),
+                    fetchJson(`${DB_BASE}/outsideCharacters.json`),
+                    fetchJson(`${DB_BASE}/musicTags.json`),
+                    fetchJson(`${DB_BASE}/musicOriginals.json`)
                 ]);
 
                 [musics, difficulties, vocals, gameChars, outsideChars, tags, originals] = results;
@@ -3547,6 +3783,9 @@
                 originals.forEach(o => origMap.set(o.musicId, o.videoLink));
                 gameChars.forEach(c => gameCharMap.set(c.id, c));
                 outsideChars.forEach(c => outCharMap.set(c.id, c));
+
+                // ブラウザ向けの検索・絞り込み用データを1回だけ前処理。
+                buildMusicPerformanceIndexes();
 
                 loadPlaylists();
                 activePlaylistId = DEFAULT_PLAYLIST_ID;
@@ -3911,6 +4150,8 @@
         }
 
         const getTagName = (musicId) => {
+            const music = musicById.get(String(musicId));
+            if (music?._tagLabel) return music._tagLabel;
             const mTags = tagMap.get(musicId) || [];
             const tagId = mTags.find(t => t !== 'all') || 'other';
             return TAG_DEF.find(t => t.id === tagId)?.label || 'その他';
@@ -3930,7 +4171,7 @@
                 text = formatDate(music.publishedAt);
                 html = text;
             } else if (sKey === 'level') {
-                const level = diffMap.get(music.id)?.[sDiff]?.playLevel || '-';
+                const level = music._difficultyLevels?.[sDiff]?.playLevel || '-';
                 const diffStr = sDiff.charAt(0).toUpperCase() + sDiff.slice(1);
                 text = `${diffStr} Lv.${level}`;
                 html = `<span class="diff-badge bg-${sDiff}" style="padding: 2px 8px; font-size: 10px; border-radius: 8px;">${diffStr} Lv.${level}</span>`;
@@ -4212,7 +4453,7 @@
                 const div = document.createElement('div');
                 div.className = 'char-item';
                 div.innerHTML = `
-                    <img src="${ASSET_BASE}/character/character_sd_l/chr_sp_${c.id}.png" alt="${c.givenName || ''}" loading="lazy" onerror="handleImageError(this)">
+                    <img src="${ASSET_BASE}/character/character_sd_l/chr_sp_${c.id}.png" alt="${c.givenName || ''}" loading="lazy" fetchpriority="low" decoding="async" onerror="handleImageError(this)">
                     <span>${c.firstName || ''}${c.givenName || ''}</span>
                 `;
                 div.onclick = () => {
@@ -4368,6 +4609,7 @@
                 vocalSel.addEventListener('change', (e) => {
                     defaultVocalPref = normalizeDefaultVocalPref(e.target.value);
                     localStorage.setItem('defaultVocalPref', defaultVocalPref);
+                    playlistTrackListCache.clear();
                 });
             }
 
@@ -4520,7 +4762,7 @@
                 const div = document.createElement('div');
                 div.className = 'char-item';
                 div.innerHTML = `
-                    <img src="${ASSET_BASE}/character/character_sd_l/chr_sp_${c.id}.png" alt="${c.givenName || ''}" loading="lazy" onerror="handleImageError(this)">
+                    <img src="${ASSET_BASE}/character/character_sd_l/chr_sp_${c.id}.png" alt="${c.givenName || ''}" loading="lazy" fetchpriority="low" decoding="async" onerror="handleImageError(this)">
                     <span>${c.firstName || ''}${c.givenName || ''}</span>
                 `;
                 div.onclick = () => {
@@ -4586,7 +4828,7 @@
             });
             document.getElementById('playlist-picker-search-input').addEventListener('input', (e) => {
                 playlistPickerSearchTerm = e.target.value.trim().toLowerCase();
-                renderPlaylistPickerList();
+                schedulePlaylistPickerSearchRender();
             });
 
             const addSongsBtn = document.getElementById('player-add-songs-btn');
@@ -4637,66 +4879,73 @@
 
 
         function getFilteredAndSortedList(search, searchMode = 'and', aTag, aWritten, sChars, sKey, sOrder, sDiff, publishedFromValue = '', publishedToValue = '') {
+            const normalizedSearch = String(search || '').trim().toLowerCase();
+            const mode = ['and', 'or', 'nand', 'nor'].includes(searchMode) ? searchMode : 'and';
+            const tagsSelected = aTag instanceof Set ? aTag : new Set(aTag === 'all' ? [] : [String(aTag || '')]);
+            const charsSelected = sChars instanceof Set ? sChars : new Set();
             const fromTime = publishedFromValue ? new Date(`${publishedFromValue}T00:00:00`).getTime() : null;
             const toTime = publishedToValue ? new Date(`${publishedToValue}T23:59:59.999`).getTime() : null;
+            const terms = normalizedSearch ? normalizedSearch.split(/\s+/).filter(Boolean) : [];
+            const tagFiltersActive = tagsSelected.size > 0 && !tagsSelected.has('all');
+            const cacheKey = makeFilterCacheKey(normalizedSearch, mode, tagsSelected, aWritten, charsSelected, sKey, sOrder, sDiff, publishedFromValue, publishedToValue);
+            const cached = getCachedFilterResult(cacheKey);
+            if (cached) return cached;
 
-            let filtered = musics.filter(m => {
-                if (search) {
-                    const matchText = [m.title, m.pronunciation, m.lyricist, m.composer, m.arranger].join(' ').toLowerCase();
-                    const terms = search.split(/\s+/).map(v => v.trim()).filter(Boolean);
-                    const matches = terms.map(term => matchText.includes(term));
-                    const anyMatch = matches.some(Boolean);
-                    const allMatch = matches.length > 0 && matches.every(Boolean);
-                    const mode = ['and', 'or', 'nand', 'nor'].includes(searchMode) ? searchMode : 'and';
+            const filtered = musics.filter(m => {
+                if (terms.length > 0) {
+                    let anyMatch = false;
+                    let allMatch = true;
+                    for (const term of terms) {
+                        const matched = m._searchText.includes(term);
+                        anyMatch ||= matched;
+                        allMatch &&= matched;
+                        if (mode === 'and' && !matched) break;
+                        if ((mode === 'or' || mode === 'nor') && matched) break;
+                    }
                     const include = mode === 'and' ? allMatch : mode === 'or' ? anyMatch : mode === 'nand' ? !allMatch : !anyMatch;
                     if (!include) return false;
                 }
-                if (fromTime !== null && (m.publishedAt || 0) < fromTime) return false;
-                if (toTime !== null && (m.publishedAt || 0) > toTime) return false;
 
-                if (aTag instanceof Set) {
-                    if (aTag.size > 0 && !aTag.has('all')) {
-                        const mTags = tagMap.get(m.id) || [];
-                        const hasSelectedUnit = Array.from(aTag).some(tagId => mTags.includes(tagId));
-                        if (!hasSelectedUnit) return false;
+                if (fromTime !== null && m._publishedAt < fromTime) return false;
+                if (toTime !== null && m._publishedAt > toTime) return false;
+
+                if (tagFiltersActive) {
+                    let hasSelectedUnit = false;
+                    for (const tagId of tagsSelected) {
+                        if (m._tagSet.has(String(tagId))) {
+                            hasSelectedUnit = true;
+                            break;
+                        }
                     }
-                } else if (aTag !== 'all') {
-                    const mTags = tagMap.get(m.id) || [];
-                    if (!mTags.includes(aTag)) return false;
+                    if (!hasSelectedUnit) return false;
                 }
+
                 if (aWritten !== 'all') {
                     if (aWritten === 'newly' && !m.isNewlyWrittenMusic) return false;
                     if (aWritten === 'cover' && m.isNewlyWrittenMusic) return false;
                 }
-                if (sChars.size > 0) {
-                    const mVocals = vocalMap.get(m.id) || [];
-                    const allCharsInMusic = new Set();
-                    mVocals.forEach(v => {
-                        (v.characters || []).forEach(c => {
-                            allCharsInMusic.add(`${c.characterType === 'game_character' ? 'game' : 'outside'}_${c.characterId}`);
-                        });
-                    });
-                    for (let charKey of sChars) {
-                        if (!allCharsInMusic.has(charKey)) return false;
+
+                if (charsSelected.size > 0) {
+                    for (const charKey of charsSelected) {
+                        if (!m._characterKeys.has(String(charKey))) return false;
                     }
                 }
 
-                if (sKey === 'level') {
-                    const diffInfo = diffMap.get(m.id)?.[sDiff];
-                    if (!diffInfo) return false;
-                }
-
+                if (sKey === 'level' && !m._difficultyLevels?.[sDiff]) return false;
                 return true;
             });
 
             filtered.sort((a, b) => {
-                let valA, valB;
+                let valA;
+                let valB;
                 if (sKey === 'id') { valA = a.id; valB = b.id; }
-                else if (sKey === 'title') { valA = a.pronunciation || a.title; valB = b.pronunciation || b.title; }
-                else if (sKey === 'publishedAt') { valA = a.publishedAt || 0; valB = b.publishedAt || 0; }
+                else if (sKey === 'title') { valA = a._sortTitle; valB = b._sortTitle; }
                 else if (sKey === 'level') {
-                    valA = diffMap.get(a.id)?.[sDiff]?.playLevel || 0;
-                    valB = diffMap.get(b.id)?.[sDiff]?.playLevel || 0;
+                    valA = a._difficultyLevels?.[sDiff]?.playLevel || 0;
+                    valB = b._difficultyLevels?.[sDiff]?.playLevel || 0;
+                } else {
+                    valA = a._publishedAt;
+                    valB = b._publishedAt;
                 }
 
                 if (valA < valB) return sOrder === 'asc' ? -1 : 1;
@@ -4704,56 +4953,118 @@
                 return 0;
             });
 
+            setCachedFilterResult(cacheKey, filtered);
             return filtered;
+        }
+
+        function disconnectProgressiveObserver(state) {
+            if (state.observer) {
+                state.observer.disconnect();
+                state.observer = null;
+            }
+            state.sentinel = null;
+            state.items = [];
+            state.nextIndex = 0;
+            state.token++;
+        }
+
+        function createProgressiveObserver(state, sentinel, loadMore) {
+            if (!sentinel || !('IntersectionObserver' in window)) return null;
+            const observer = new IntersectionObserver(entries => {
+                if (entries.some(entry => entry.isIntersecting)) loadMore();
+            }, { root: null, rootMargin: RENDER_ROOT_MARGIN, threshold: 0 });
+            observer.observe(sentinel);
+            state.observer = observer;
+            return observer;
+        }
+
+        function getImageAttributes(url, alt = 'jacket', eager = false) {
+            const priority = eager ? 'high' : 'low';
+            const loading = eager ? 'eager' : 'lazy';
+            return `src="${url}" alt="${alt}" loading="${loading}" fetchpriority="${priority}" decoding="async" onerror="handleImageError(this)"`;
+        }
+
+        function appendMusicCards(container, state, batchSize, createCard) {
+            if (!container) return;
+            const end = Math.min(state.nextIndex + batchSize, state.items.length);
+            if (state.nextIndex >= end) return;
+            const fragment = document.createDocumentFragment();
+            const isInitialAppend = state.nextIndex === 0;
+            for (let i = state.nextIndex; i < end; i++) {
+                fragment.appendChild(createCard(state.items[i], isInitialAppend && i === state.nextIndex));
+            }
+            state.nextIndex = end;
+            if (state.sentinel && state.sentinel.parentNode === container) container.insertBefore(fragment, state.sentinel);
+            else container.appendChild(fragment);
+
+            if (state.nextIndex >= state.items.length) {
+                if (state.observer) {
+                    state.observer.disconnect();
+                    state.observer = null;
+                }
+                if (state.sentinel?.parentNode === container) state.sentinel.remove();
+                state.sentinel = null;
+            }
         }
 
         function renderList() {
             const filtered = getFilteredAndSortedList(searchTerm, searchOperator, activeTag, activeWritten, selectedChars, sortKey, sortOrder, sortDiff, publishedFrom, publishedTo);
             const container = document.getElementById('music-list');
+            if (!container) return;
+            disconnectProgressiveObserver(mainListRenderState);
             container.innerHTML = '';
+            mainListRenderState.items = filtered;
 
-            const fragment = document.createDocumentFragment();
-            filtered.forEach(m => {
+            const createCard = (m, isFirst) => {
                 const el = document.createElement('div');
                 el.className = 'music-item';
                 if (pCurrentMusic && pCurrentMusic.id === m.id) el.classList.add('playing');
                 el.onclick = () => openDetail(m);
-
                 const meta = getMeta(m, sortKey, sortDiff);
                 el.innerHTML = `
-                    <img src="${getJacketUrl(m.id)}" alt="jacket" loading="lazy" onerror="handleImageError(this)">
+                    <img ${getImageAttributes(getJacketUrl(m.id), 'jacket', isFirst)}>
                     <div class="info-container">
                         <div class="title" title="${m.title}">${m.title}</div>
                         <div class="meta" title="${meta.text}">${meta.html}</div>
                     </div>
                 `;
-                fragment.appendChild(el);
-            });
-            container.appendChild(fragment);
+                return el;
+            };
+
+            appendMusicCards(container, mainListRenderState, LIST_INITIAL_BATCH, createCard);
+            if (mainListRenderState.nextIndex < mainListRenderState.items.length) {
+                const sentinel = document.createElement('div');
+                sentinel.className = 'music-list-render-sentinel';
+                mainListRenderState.sentinel = sentinel;
+                container.appendChild(sentinel);
+                if (!createProgressiveObserver(mainListRenderState, sentinel, () => {
+                    appendMusicCards(container, mainListRenderState, LIST_APPEND_BATCH, createCard);
+                })) {
+                    appendMusicCards(container, mainListRenderState, mainListRenderState.items.length, createCard);
+                }
+            }
         }
 
         function renderPlayerList() {
             currentPlaylist = getPlaylistTrackList(getActivePlaylist());
             const container = document.getElementById('player-music-list');
             if (!container) return;
+            disconnectProgressiveObserver(playerListRenderState);
             container.innerHTML = '';
+            playerListRenderState.items = currentPlaylist;
 
             const isCurrentPlayingPlaylist = activePlaylistId === playingPlaylistId;
             const currentTrackKey = getCurrentPlayerTrackKey();
-            const fragment = document.createDocumentFragment();
-            currentPlaylist.forEach(entry => {
+            const createCard = (entry, isFirst) => {
                 const m = entry.music;
                 const vocal = entry.vocal;
                 const el = document.createElement('div');
                 el.className = 'music-item';
                 if (isCurrentPlayingPlaylist && currentTrackKey && currentTrackKey === entry.trackKey) el.classList.add('playing');
-                el.onclick = () => {
-                    loadPlayerAudio(m, vocal, true, activePlaylistId);
-                };
-
+                el.onclick = () => loadPlayerAudio(m, vocal, true, activePlaylistId);
                 const meta = getMeta(m, p_sortKey, p_sortDiff);
                 el.innerHTML = `
-                    <img src="${getJacketUrl(m.id)}" alt="jacket" loading="lazy" onerror="handleImageError(this)">
+                    <img ${getImageAttributes(getJacketUrl(m.id), 'jacket', isFirst)}>
                     <div class="info-container">
                         <div class="title" title="${m.title}">${m.title}</div>
                         <div class="meta" title="${meta.text}">${meta.html}</div>
@@ -4767,9 +5078,22 @@
                     vocalLine.textContent = `歌唱: ${getVocalDisplayName(vocal)}`;
                     info.appendChild(vocalLine);
                 }
-                fragment.appendChild(el);
-            });
-            container.appendChild(fragment);
+                return el;
+            };
+
+            appendMusicCards(container, playerListRenderState, PLAYER_LIST_INITIAL_BATCH, createCard);
+            if (playerListRenderState.nextIndex < playerListRenderState.items.length) {
+                const sentinel = document.createElement('div');
+                sentinel.className = 'music-list-render-sentinel';
+                playerListRenderState.sentinel = sentinel;
+                container.appendChild(sentinel);
+                if (!createProgressiveObserver(playerListRenderState, sentinel, () => {
+                    appendMusicCards(container, playerListRenderState, PLAYER_LIST_APPEND_BATCH, createCard);
+                })) {
+                    appendMusicCards(container, playerListRenderState, playerListRenderState.items.length, createCard);
+                }
+            }
+
             const title = document.getElementById('active-playlist-title');
             const playlist = getActivePlaylist();
             if (title && playlist) title.textContent = playlist.name;
@@ -5101,12 +5425,61 @@
             if (playerVisible && document.getElementById('playlist-active-view')?.style.display !== 'none') renderPlayerList();
         }
 
+        function clearPlayerAudioPrefetch() {
+            if (pNextAudioPrefetchTimer !== null) {
+                clearTimeout(pNextAudioPrefetchTimer);
+                pNextAudioPrefetchTimer = null;
+            }
+            if (pNextAudioPrefetch) {
+                try {
+                    pNextAudioPrefetch.pause();
+                    pNextAudioPrefetch.removeAttribute('src');
+                    pNextAudioPrefetch.load();
+                } catch (e) {}
+            }
+            pNextAudioPrefetch = null;
+            pNextAudioPrefetchUrl = '';
+        }
+
+        function scheduleNextTrackAudioPrefetch() {
+            if (pNextAudioPrefetchTimer !== null) clearTimeout(pNextAudioPrefetchTimer);
+            pNextAudioPrefetchTimer = setTimeout(() => {
+                pNextAudioPrefetchTimer = null;
+                if (document.visibilityState !== 'visible' || pAudio.paused) return;
+                const playingPlaylist = getPlayingPlaylist();
+                const playlistTracks = getPlayingPlaylistTrackList();
+                if (!playingPlaylist || playlistTracks.length < 2 || isShuffle) return;
+                const currentTrackKey = getCurrentPlayerTrackKey();
+                const currentIndex = playlistTracks.findIndex(entry => entry.trackKey === currentTrackKey);
+                let nextIndex;
+                nextIndex = currentIndex >= 0 ? currentIndex + 1 : 0;
+                if (nextIndex >= playlistTracks.length) {
+                    if (repeatMode !== 'all') return;
+                    nextIndex = 0;
+                }
+                const next = playlistTracks[nextIndex];
+                if (!next?.vocal) return;
+                const nextUrl = getAudioBaseUrl(next.vocal);
+                if (!nextUrl || nextUrl === pAudio.src.split('?')[0] || nextUrl === pNextAudioPrefetchUrl) return;
+
+                clearPlayerAudioPrefetch();
+                const preloader = new Audio();
+                preloader.preload = 'auto';
+                preloader.playsInline = true;
+                preloader.src = nextUrl;
+                pNextAudioPrefetch = preloader;
+                pNextAudioPrefetchUrl = nextUrl;
+                try { preloader.load(); } catch (e) {}
+            }, 1200);
+        }
+
         function loadPlayerAudio(music, vocal, autoPlay = false, sourcePlaylistId = activePlaylistId) {
             const sourcePlaylist = playlists.find(p => p.id === sourcePlaylistId) || getActivePlaylist();
             if (sourcePlaylist) playingPlaylistId = sourcePlaylist.id;
             pCurrentMusic = music;
             pCurrentVocal = vocal;
             pAudioRetryCount = 0;
+            clearPlayerAudioPrefetch();
             pSpeechAnnouncePending = true;
             pSpeechAnnouncedForCurrentTrack = false;
             pSpeechTrackEndedWaiting = false;
@@ -5151,11 +5524,13 @@
             scheduleSpeechForCurrentTrack();
 
             const doPlay = () => {
+                pAudio.preload = 'auto';
                 resetPositionIfNeeded();
                 const playPromise = pAudio.play();
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
                         pAudioRetryCount = 0;
+                        scheduleNextTrackAudioPrefetch();
                     }).catch(e => {
                         if (e.name !== 'NotAllowedError' && pAudioRetryCount < 2 && pCurrentVocal) {
                             pAudioRetryCount++;
@@ -5296,6 +5671,7 @@
         }
 
         function startModalPlay() {
+            clearPlayerAudioPrefetch();
             if (!pAudio.paused) {
                 pAudio.pause();
                 syncPlayerUI();
@@ -5428,7 +5804,7 @@
 
 
         function setupAudioListeners() {
-            pAudio.addEventListener('play', () => { syncPlayerUI(); scheduleSpeechForCurrentTrack(); });
+            pAudio.addEventListener('play', () => { syncPlayerUI(); scheduleSpeechForCurrentTrack(); scheduleNextTrackAudioPrefetch(); });
             pAudio.addEventListener('pause', syncPlayerUI);
             pAudio.addEventListener('ended', () => {
                 syncPlayerUI();
@@ -5519,6 +5895,14 @@
                 }
             }
         }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') {
+                clearPlayerAudioPrefetch();
+                return;
+            }
+            if (!pAudio.paused) scheduleNextTrackAudioPrefetch();
+        });
 
         window.addEventListener('DOMContentLoaded', init);
     </script>
