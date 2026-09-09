@@ -1580,17 +1580,85 @@
         }
         .playlist-picker-item {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-sm);
             background: var(--secondary-bg);
-            cursor: pointer;
             min-width: 0;
         }
         .playlist-picker-item:hover { border-color: var(--accent-color); }
-        .playlist-picker-item input { flex: 0 0 auto; accent-color: var(--accent-color); }
+        .playlist-picker-song-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .playlist-picker-song-row input {
+            flex: 0 0 auto;
+            accent-color: var(--accent-color);
+        }
+        .playlist-picker-vocal-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding-left: 31px;
+            min-width: 0;
+        }
+        .playlist-picker-vocal-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            max-width: 100%;
+            padding: 5px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            background: var(--primary-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+        .playlist-picker-vocal-option:hover {
+            border-color: var(--accent-color);
+        }
+        .playlist-picker-vocal-option:has(input:checked) {
+            background: rgba(0, 188, 212, 0.1);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+        .playlist-picker-vocal-option input {
+            flex: 0 0 auto;
+            accent-color: var(--accent-color);
+            margin: 0;
+        }
+        .playlist-picker-vocal-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .playlist-picker-no-vocal {
+            margin-left: 31px;
+            color: var(--text-sub);
+            font-size: 11px;
+        }
+        .playlist-track-vocal {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 3px;
+            max-width: 100%;
+            color: var(--accent-color);
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         .playlist-picker-item img {
             width: 44px;
             height: 44px;
@@ -2101,7 +2169,7 @@
                     <span id="playlist-picker-count" class="playlist-picker-count">0曲選択</span>
                 </div>
                 <div class="playlist-selection-summary">
-                    <span>選択した曲をこの再生リストの再生対象にします。</span>
+                    <span>選択したボーカルをこの再生リストの再生対象にします。同じ曲でもボーカルごとに別項目として登録できます。</span>
                     <strong id="playlist-picker-selected-count">0曲</strong>
                 </div>
                 <div id="playlist-picker-list" class="playlist-picker-list"></div>
@@ -2497,6 +2565,7 @@
                 name: '全曲',
                 default: true,
                 songIds: musics.map(m => String(m.id)),
+                tracks: [],
                 searchTerm: '',
                 searchOperator: 'and',
                 publishedFrom: '',
@@ -2512,13 +2581,110 @@
             };
         }
 
+        // 再生リスト内の1項目を「楽曲ID + ボーカルのassetbundleName」で一意に識別する。
+        // JSON文字列をキーにすることで、区切り文字を含むIDでも衝突しないようにする。
+        function makePlaylistTrackKey(musicId, vocalOrKey) {
+            const vocalKey = vocalOrKey && typeof vocalOrKey === 'object'
+                ? String(vocalOrKey.assetbundleName || '')
+                : String(vocalOrKey || '');
+            return JSON.stringify([String(musicId), vocalKey]);
+        }
+
+        function parsePlaylistTrackKey(key) {
+            try {
+                const parsed = JSON.parse(String(key));
+                if (Array.isArray(parsed) && parsed.length === 2 && parsed[0] != null && parsed[1] != null) {
+                    return { songId: String(parsed[0]), vocalKey: String(parsed[1]) };
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        function getVocalByKey(musicId, vocalKey) {
+            const numericId = Number(musicId);
+            const candidates = [musicId, String(musicId)];
+            if (Number.isFinite(numericId)) candidates.push(numericId);
+            let mVocals = [];
+            for (const candidate of candidates) {
+                const found = vocalMap.get(candidate);
+                if (Array.isArray(found)) {
+                    mVocals = found;
+                    break;
+                }
+            }
+            return mVocals.find(v => String(v.assetbundleName || '') === String(vocalKey || '')) || null;
+        }
+
+        function getVocalDisplayName(vocal) {
+            if (!vocal) return 'ボーカル未設定';
+            const names = getMusicVocalCharacterNames(vocal);
+            return vocal.displayName || names.join(', ') || 'Unknown Vocal';
+        }
+
+        function makeDefaultPlaylistTrack(music) {
+            const vocal = getDefaultVocal(music, vocalMap.get(music.id) || []);
+            if (!vocal) return null;
+            return {
+                songId: String(music.id),
+                vocalKey: String(vocal.assetbundleName || '')
+            };
+        }
+
+        function normalizePlaylistTracks(rawTracks, rawSongIds) {
+            const validIds = new Set(musics.map(m => String(m.id)));
+            const result = [];
+            const seen = new Set();
+            const addTrack = (songId, vocalKey) => {
+                const sid = String(songId || '');
+                const vk = String(vocalKey || '');
+                if (!sid || !validIds.has(sid) || !vk) return;
+                const vocal = getVocalByKey(sid, vk);
+                if (!vocal) return;
+                const key = makePlaylistTrackKey(sid, vk);
+                if (seen.has(key)) return;
+                seen.add(key);
+                result.push({ songId: sid, vocalKey: vk });
+            };
+
+            if (Array.isArray(rawTracks)) {
+                rawTracks.forEach(track => {
+                    if (!track || typeof track !== 'object') return;
+                    addTrack(track.songId, track.vocalKey || track.assetbundleName);
+                });
+            }
+
+            // 旧形式(songIdsのみ)は従来どおり各曲のデフォルトボーカルとして移行する。
+            if (result.length === 0 && Array.isArray(rawSongIds)) {
+                rawSongIds.map(String).forEach(songId => {
+                    const music = musics.find(m => String(m.id) === songId);
+                    if (!music) return;
+                    const fallback = makeDefaultPlaylistTrack(music);
+                    if (fallback) addTrack(fallback.songId, fallback.vocalKey);
+                });
+            }
+            return result;
+        }
+
+        function getPlaylistTrackKeys(playlist) {
+            if (!playlist) return [];
+            if (playlist.default) return [];
+            if (Array.isArray(playlist.tracks) && playlist.tracks.length > 0) {
+                return playlist.tracks.map(t => makePlaylistTrackKey(t.songId, t.vocalKey));
+            }
+            return normalizePlaylistTracks([], playlist.songIds || []).map(t => makePlaylistTrackKey(t.songId, t.vocalKey));
+        }
+
         function normalizeStoredPlaylist(raw, index) {
             if (!raw || typeof raw !== 'object') return null;
             const id = raw.id ? String(raw.id) : `playlist-${Date.now()}-${index}`;
             const isDefault = id === DEFAULT_PLAYLIST_ID || raw.default === true;
             const ids = Array.isArray(raw.songIds) ? raw.songIds.map(String) : [];
             const validIds = new Set(musics.map(m => String(m.id)));
-            const songIds = isDefault ? musics.map(m => String(m.id)) : [...new Set(ids)].filter(id2 => validIds.has(id2));
+            const legacySongIds = [...new Set(ids)].filter(id2 => validIds.has(id2));
+            const tracks = isDefault ? [] : normalizePlaylistTracks(raw.tracks, legacySongIds);
+            const songIds = isDefault
+                ? musics.map(m => String(m.id))
+                : [...new Set((tracks.length ? tracks.map(t => t.songId) : legacySongIds).map(String))].filter(id2 => validIds.has(id2));
             const validOperators = ['and', 'or', 'nand', 'nor'];
             const validSortKeys = ['id', 'title', 'publishedAt', 'level'];
             const validDiffs = ['easy', 'normal', 'hard', 'expert', 'master', 'append'];
@@ -2527,6 +2693,7 @@
                 name: isDefault ? '全曲' : (String(raw.name || '').trim() || '新しい再生リスト'),
                 default: isDefault,
                 songIds,
+                tracks,
                 searchTerm: String(raw.searchTerm || '').trim().toLowerCase(),
                 searchOperator: validOperators.includes(raw.searchOperator) ? raw.searchOperator : 'and',
                 publishedFrom: String(raw.publishedFrom || ''),
@@ -2558,11 +2725,22 @@
             defaultPlaylist.default = true;
             defaultPlaylist.name = '全曲';
             defaultPlaylist.songIds = musics.map(m => String(m.id));
+            defaultPlaylist.tracks = [];
             playlists = [defaultPlaylist, ...custom];
             try { localStorage.setItem(PLAYLIST_STORAGE_KEY, JSON.stringify(playlists)); } catch (e) {}
         }
 
         function savePlaylists() {
+            // 保存前にカスタム再生リストのsongIdsをtracksから同期し、旧形式との互換性も維持する。
+            playlists.forEach(playlist => {
+                if (playlist.default) {
+                    playlist.songIds = musics.map(m => String(m.id));
+                    playlist.tracks = [];
+                } else if (Array.isArray(playlist.tracks)) {
+                    playlist.tracks = normalizePlaylistTracks(playlist.tracks, []).map(t => ({ ...t }));
+                    playlist.songIds = [...new Set(playlist.tracks.map(t => t.songId))];
+                }
+            });
             try { localStorage.setItem(PLAYLIST_STORAGE_KEY, JSON.stringify(playlists)); } catch (e) {}
         }
 
@@ -2600,7 +2778,6 @@
             playlist.sortKey = p_sortKey;
             playlist.sortOrder = p_sortOrder;
             playlist.sortDiff = p_sortDiff;
-            if (playlist.default) playlist.songIds = musics.map(m => String(m.id));
             savePlaylists();
         }
 
@@ -2627,9 +2804,7 @@
 
         function getPlaylistTrackList(playlist) {
             if (!playlist) return [];
-            const pool = getPlaylistSongPool(playlist);
-            const poolIds = new Set(pool.map(m => m.id));
-            return getFilteredAndSortedList(
+            const filteredSongs = getFilteredAndSortedList(
                 playlist.searchTerm || '',
                 playlist.searchOperator || 'and',
                 new Set(playlist.activeTag || []),
@@ -2640,7 +2815,45 @@
                 playlist.sortDiff || 'easy',
                 playlist.publishedFrom || '',
                 playlist.publishedTo || ''
-            ).filter(m => poolIds.has(m.id));
+            );
+            const poolIds = new Set(getPlaylistSongPool(playlist).map(m => String(m.id)));
+            const filteredPool = filteredSongs.filter(m => poolIds.has(String(m.id)));
+
+            if (playlist.default) {
+                return filteredPool.map(m => {
+                    const vocal = getDefaultVocal(m, vocalMap.get(m.id) || []);
+                    return vocal ? {
+                        music: m,
+                        vocal,
+                        trackKey: makePlaylistTrackKey(m.id, vocal)
+                    } : null;
+                }).filter(Boolean);
+            }
+
+            const selectedTracks = Array.isArray(playlist.tracks) && playlist.tracks.length
+                ? playlist.tracks
+                : normalizePlaylistTracks([], playlist.songIds || []);
+            const tracksBySong = new Map();
+            selectedTracks.forEach(track => {
+                const sid = String(track.songId);
+                if (!tracksBySong.has(sid)) tracksBySong.set(sid, []);
+                tracksBySong.get(sid).push(track);
+            });
+
+            const result = [];
+            filteredPool.forEach(m => {
+                const bySong = tracksBySong.get(String(m.id)) || [];
+                bySong.forEach(track => {
+                    const vocal = getVocalByKey(m.id, track.vocalKey);
+                    if (!vocal) return;
+                    result.push({
+                        music: m,
+                        vocal,
+                        trackKey: makePlaylistTrackKey(m.id, vocal)
+                    });
+                });
+            });
+            return result;
         }
 
         function getPlayingPlaylist() {
@@ -2650,6 +2863,11 @@
 
         function getPlayingPlaylistTrackList() {
             return getPlaylistTrackList(getPlayingPlaylist());
+        }
+
+        function getCurrentPlayerTrackKey() {
+            if (!pCurrentMusic || !pCurrentVocal) return null;
+            return makePlaylistTrackKey(pCurrentMusic.id, pCurrentVocal);
         }
 
         function showPlaylistSelectionView() {
@@ -2727,7 +2945,7 @@
                 title.textContent = playlist.name;
                 const meta = document.createElement('div');
                 meta.className = 'playlist-card-meta';
-                const songCount = playlist.default ? musics.length : playlist.songIds.length;
+                const songCount = playlist.default ? musics.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : playlist.songIds.length);
                 meta.textContent = `${songCount}曲${playlist.default ? '・削除不可' : ''}`;
                 if (isPlaying) {
                     const playingBadge = document.createElement('span');
@@ -2815,7 +3033,7 @@
             } else {
                 title.textContent = '再生リストを編集';
                 input.value = target?.name || '';
-                playlistPickerSelectedIds = new Set((target?.songIds || []).map(String));
+                playlistPickerSelectedIds = new Set(getPlaylistTrackKeys(target));
                 block.style.display = target?.default ? 'none' : 'block';
             }
             const search = document.getElementById('playlist-picker-search-input');
@@ -2832,34 +3050,51 @@
             document.body.style.overflow = '';
         }
 
+        function togglePlaylistPickerSongVocal(musicId, vocalKey, checked) {
+            const key = makePlaylistTrackKey(musicId, vocalKey);
+            if (checked) playlistPickerSelectedIds.add(key);
+            else playlistPickerSelectedIds.delete(key);
+            updatePlaylistPickerCounts();
+        }
+
         function renderPlaylistPickerList() {
             const container = document.getElementById('playlist-picker-list');
-            const countEl = document.getElementById('playlist-picker-count');
-            const selectedEl = document.getElementById('playlist-picker-selected-count');
             if (!container) return;
             const term = playlistPickerSearchTerm.trim().toLowerCase();
             const visible = musics.filter(m => {
+                const mVocals = vocalMap.get(m.id) || [];
                 if (!term) return true;
-                return [m.title, m.pronunciation, m.lyricist, m.composer, m.arranger].join(' ').toLowerCase().includes(term);
+                const vocalText = mVocals.map(getVocalDisplayName).join(' ');
+                return [m.title, m.pronunciation, m.lyricist, m.composer, m.arranger, vocalText]
+                    .join(' ').toLowerCase().includes(term);
             });
             container.innerHTML = '';
+
             visible.forEach(m => {
-                const label = document.createElement('label');
-                label.className = 'playlist-picker-item';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = playlistPickerSelectedIds.has(String(m.id));
-                checkbox.addEventListener('change', () => {
-                    const id = String(m.id);
-                    if (checkbox.checked) playlistPickerSelectedIds.add(id);
-                    else playlistPickerSelectedIds.delete(id);
-                    updatePlaylistPickerCounts();
+                const item = document.createElement('div');
+                item.className = 'playlist-picker-item';
+
+                const songRow = document.createElement('div');
+                songRow.className = 'playlist-picker-song-row';
+
+                const songSelection = document.createElement('input');
+                songSelection.type = 'checkbox';
+                songSelection.tabIndex = -1;
+                const mVocals = vocalMap.get(m.id) || [];
+                songSelection.checked = mVocals.length > 0 && mVocals.every(v => playlistPickerSelectedIds.has(makePlaylistTrackKey(m.id, v)));
+                songSelection.indeterminate = mVocals.some(v => playlistPickerSelectedIds.has(makePlaylistTrackKey(m.id, v))) && !songSelection.checked;
+                songSelection.title = 'この曲のボーカルをすべて選択';
+                songSelection.addEventListener('change', () => {
+                    mVocals.forEach(v => togglePlaylistPickerSongVocal(m.id, v.assetbundleName, songSelection.checked));
+                    renderPlaylistPickerList();
                 });
+
                 const img = document.createElement('img');
                 img.src = getJacketUrl(m.id);
                 img.alt = 'jacket';
                 img.loading = 'lazy';
                 img.onerror = () => handleImageError(img);
+
                 const text = document.createElement('div');
                 text.className = 'playlist-picker-item-text';
                 const title = document.createElement('div');
@@ -2867,10 +3102,43 @@
                 title.textContent = m.title;
                 const meta = document.createElement('div');
                 meta.className = 'playlist-picker-item-meta';
-                meta.textContent = `ID: ${m.id}`;
+                meta.textContent = `ID: ${m.id} ・ ボーカル ${mVocals.length}種`;
                 text.append(title, meta);
-                label.append(checkbox, img, text);
-                container.appendChild(label);
+                songRow.append(songSelection, img, text);
+                item.appendChild(songRow);
+
+                if (mVocals.length > 0) {
+                    const vocalList = document.createElement('div');
+                    vocalList.className = 'playlist-picker-vocal-list';
+                    mVocals.forEach(v => {
+                        const vocalLabel = document.createElement('label');
+                        vocalLabel.className = 'playlist-picker-vocal-option';
+                        vocalLabel.title = getVocalDisplayName(v);
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = playlistPickerSelectedIds.has(makePlaylistTrackKey(m.id, v));
+                        checkbox.addEventListener('change', () => {
+                            togglePlaylistPickerSongVocal(m.id, v.assetbundleName, checkbox.checked);
+                            renderPlaylistPickerList();
+                        });
+
+                        const labelText = document.createElement('span');
+                        labelText.className = 'playlist-picker-vocal-label';
+                        labelText.textContent = getVocalDisplayName(v);
+
+                        vocalLabel.append(checkbox, labelText);
+                        vocalList.appendChild(vocalLabel);
+                    });
+                    item.appendChild(vocalList);
+                } else {
+                    const noVocal = document.createElement('div');
+                    noVocal.className = 'playlist-picker-no-vocal';
+                    noVocal.textContent = 'ボーカル情報がありません';
+                    item.appendChild(noVocal);
+                }
+
+                container.appendChild(item);
             });
             updatePlaylistPickerCounts();
         }
@@ -2883,6 +3151,22 @@
             if (selectedEl) selectedEl.textContent = `${count}曲`;
         }
 
+        function getSelectedPlaylistTracks() {
+            const tracks = [];
+            const seen = new Set();
+            playlistPickerSelectedIds.forEach(key => {
+                const parsed = parsePlaylistTrackKey(key);
+                if (!parsed) return;
+                const vocal = getVocalByKey(parsed.songId, parsed.vocalKey);
+                if (!vocal) return;
+                const normalizedKey = makePlaylistTrackKey(parsed.songId, vocal);
+                if (seen.has(normalizedKey)) return;
+                seen.add(normalizedKey);
+                tracks.push({ songId: parsed.songId, vocalKey: String(vocal.assetbundleName) });
+            });
+            return tracks;
+        }
+
         function savePlaylistPicker() {
             const nameInput = document.getElementById('playlist-name-input');
             const name = (nameInput?.value || '').trim();
@@ -2891,13 +3175,18 @@
                 nameInput?.focus();
                 return;
             }
+
+            const tracks = getSelectedPlaylistTracks();
+            const songIds = [...new Set(tracks.map(t => t.songId))];
+
             if (playlistPickerMode === 'create') {
                 const id = makePlaylistId();
                 playlists.push({
                     id,
                     name: name || '新しい再生リスト',
                     default: false,
-                    songIds: Array.from(playlistPickerSelectedIds),
+                    songIds,
+                    tracks,
                     searchTerm: '',
                     searchOperator: 'and',
                     publishedFrom: '',
@@ -2923,11 +3212,13 @@
                 return;
             }
             target.name = name || target.name;
-            target.songIds = Array.from(playlistPickerSelectedIds);
+            target.tracks = tracks;
+            target.songIds = songIds;
             savePlaylists();
             closePlaylistPicker();
             if (playlistPickerReturnView === 'active' && activePlaylistId === target.id) {
-                if (!target.songIds.includes(String(pCurrentMusic?.id || '')) && pCurrentMusic) {
+                const currentKey = getCurrentPlayerTrackKey();
+                if (currentKey && !target.tracks.some(t => makePlaylistTrackKey(t.songId, t.vocalKey) === currentKey)) {
                     pAudio.pause();
                     pCurrentMusic = null;
                     pCurrentVocal = null;
@@ -2972,10 +3263,13 @@
         function buildPlaylistSharePayload(playlist) {
             return {
                 format: 'sekai-music-playlist',
-                version: 1,
+                version: 2,
                 playlist: {
                     name: playlist.name,
                     songIds: Array.from(new Set((playlist.songIds || []).map(String))),
+                    tracks: Array.isArray(playlist.tracks)
+                        ? playlist.tracks.map(t => ({ songId: String(t.songId), vocalKey: String(t.vocalKey) }))
+                        : [],
                     searchTerm: playlist.searchTerm || '',
                     searchOperator: playlist.searchOperator || 'and',
                     publishedFrom: playlist.publishedFrom || '',
@@ -3013,7 +3307,7 @@
             if (playlistShareMode === 'export') {
                 if (!playlist || playlist.default) return;
                 title.textContent = `「${playlist.name}」を共有`;
-                help.textContent = '下のBase64文字列をコピーして共有してください。相手はこの文字列をインポートすると同じ再生リストを作成できます。';
+                help.textContent = '下のBase64文字列をコピーして共有してください。ボーカル指定も含めて同じ再生リストを作成できます。';
                 textarea.value = encodePlaylistForSharing(playlist);
                 textarea.readOnly = true;
                 copyBtn.style.display = 'inline-flex';
@@ -3070,7 +3364,8 @@
             try {
                 const decoded = base64ToUtf8(rawInput);
                 const payload = JSON.parse(decoded);
-                if (!payload || payload.format !== 'sekai-music-playlist' || payload.version !== 1 || !payload.playlist || typeof payload.playlist !== 'object') {
+                const supportedVersion = payload?.format === 'sekai-music-playlist' && (payload.version === 1 || payload.version === 2);
+                if (!supportedVersion || !payload.playlist || typeof payload.playlist !== 'object') {
                     throw new Error('unsupported format');
                 }
 
@@ -3082,15 +3377,30 @@
                 if (!normalized || normalized.default || !normalized.name) throw new Error('invalid playlist');
 
                 const sourceIds = Array.isArray(payload.playlist.songIds) ? payload.playlist.songIds.map(String) : [];
-                const missingCount = [...new Set(sourceIds)].filter(id => !musics.some(m => String(m.id) === id)).length;
+                const sourceTracks = Array.isArray(payload.playlist.tracks) ? payload.playlist.tracks : [];
+                const missingSongIds = [...new Set(sourceIds)].filter(id => !musics.some(m => String(m.id) === id));
+                let missingTrackCount = 0;
+                if (payload.version === 2 && sourceTracks.length > 0) {
+                    const validNormalizedKeys = new Set(normalized.tracks.map(t => makePlaylistTrackKey(t.songId, t.vocalKey)));
+                    missingTrackCount = sourceTracks.filter(track => {
+                        const key = track && typeof track === 'object'
+                            ? makePlaylistTrackKey(track.songId, track.vocalKey || track.assetbundleName)
+                            : null;
+                        return !key || !validNormalizedKeys.has(key);
+                    }).length;
+                } else {
+                    missingTrackCount = missingSongIds.length;
+                }
+
                 playlists.push(normalized);
                 savePlaylists();
                 closePlaylistShareModal();
                 renderPlaylistSelection();
-                const message = missingCount > 0
-                    ? `「${normalized.name}」をインポートしました。\n${missingCount}曲は現在のデータベースに存在しないため除外されました。`
-                    : `「${normalized.name}」をインポートしました。`;
-                alert(message);
+                const missingCount = (payload.version === 2 && sourceTracks.length > 0) ? missingTrackCount : missingSongIds.length;
+                const missingMessage = missingCount > 0
+                    ? `\n${missingCount}曲は現在のデータベースに存在しない、または利用できるボーカル情報がないため除外されました。`
+                    : '';
+                alert(`「${normalized.name}」をインポートしました。${missingMessage}`);
             } catch (e) {
                 console.error('Playlist import failed:', e);
                 alert('共有データを読み込めませんでした。Base64文字列が正しいか確認してください。');
@@ -4429,14 +4739,15 @@
             container.innerHTML = '';
 
             const isCurrentPlayingPlaylist = activePlaylistId === playingPlaylistId;
+            const currentTrackKey = getCurrentPlayerTrackKey();
             const fragment = document.createDocumentFragment();
-            currentPlaylist.forEach(m => {
+            currentPlaylist.forEach(entry => {
+                const m = entry.music;
+                const vocal = entry.vocal;
                 const el = document.createElement('div');
                 el.className = 'music-item';
-                if (isCurrentPlayingPlaylist && pCurrentMusic && pCurrentMusic.id === m.id) el.classList.add('playing');
+                if (isCurrentPlayingPlaylist && currentTrackKey && currentTrackKey === entry.trackKey) el.classList.add('playing');
                 el.onclick = () => {
-                    const mVocals = vocalMap.get(m.id) || [];
-                    const vocal = getDefaultVocal(m, mVocals);
                     loadPlayerAudio(m, vocal, true, activePlaylistId);
                 };
 
@@ -4448,6 +4759,14 @@
                         <div class="meta" title="${meta.text}">${meta.html}</div>
                     </div>
                 `;
+                const info = el.querySelector('.info-container');
+                if (info) {
+                    const vocalLine = document.createElement('div');
+                    vocalLine.className = 'playlist-track-vocal';
+                    vocalLine.title = getVocalDisplayName(vocal);
+                    vocalLine.textContent = `歌唱: ${getVocalDisplayName(vocal)}`;
+                    info.appendChild(vocalLine);
+                }
                 fragment.appendChild(el);
             });
             container.appendChild(fragment);
@@ -4887,7 +5206,8 @@
                 return;
             }
 
-            const currentIndex = playlistTracks.findIndex(m => m.id === pCurrentMusic?.id);
+            const currentTrackKey = getCurrentPlayerTrackKey();
+            const currentIndex = playlistTracks.findIndex(entry => entry.trackKey === currentTrackKey);
             let nextIndex = 0;
 
             if (playbackShuffle) {
@@ -4911,10 +5231,9 @@
                 }
             }
 
-            const nextMusic = playlistTracks[nextIndex];
-            const mVocals = vocalMap.get(nextMusic.id) || [];
-            const nextVocal = getDefaultVocal(nextMusic, mVocals);
-            loadPlayerAudio(nextMusic, nextVocal, true, playingPlaylist.id);
+            const nextTrack = playlistTracks[nextIndex];
+            if (!nextTrack) return;
+            loadPlayerAudio(nextTrack.music, nextTrack.vocal, true, playingPlaylist.id);
         }
 
         function playPrev() {
@@ -4927,7 +5246,8 @@
                 return;
             }
             
-            const currentIndex = playlistTracks.findIndex(m => m.id === pCurrentMusic?.id);
+            const currentTrackKey = getCurrentPlayerTrackKey();
+            const currentIndex = playlistTracks.findIndex(entry => entry.trackKey === currentTrackKey);
             let prevIndex = 0;
 
             if (playbackShuffle) {
@@ -4938,10 +5258,9 @@
                 }
             }
 
-            const prevMusic = playlistTracks[prevIndex];
-            const mVocals = vocalMap.get(prevMusic.id) || [];
-            const prevVocal = getDefaultVocal(prevMusic, mVocals);
-            loadPlayerAudio(prevMusic, prevVocal, true, playingPlaylist.id);
+            const prevTrack = playlistTracks[prevIndex];
+            if (!prevTrack) return;
+            loadPlayerAudio(prevTrack.music, prevTrack.vocal, true, playingPlaylist.id);
         }
 
         function loadModalAudio(music, vocal, autoPlay = false) {
