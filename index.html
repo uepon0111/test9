@@ -3806,7 +3806,7 @@
         const getJacketUrl = (id) => {
             if (!id) return 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
             const pad = String(id).padStart(3, '0');
-            return `${ASSET_BASE}/music/jacket/jacket_s_${pad}/jacket_s_${pad}.png`;
+            return `${ASSET_BASE}/music/jacket/jacket_s_${pad}/jacket_s_${pad}.webp`;
         };
 
         const formatDate = (ms) => {
@@ -4453,7 +4453,7 @@
                 const div = document.createElement('div');
                 div.className = 'char-item';
                 div.innerHTML = `
-                    <img src="${ASSET_BASE}/character/character_sd_l/chr_sp_${c.id}.png" alt="${c.givenName || ''}" loading="lazy" fetchpriority="low" decoding="async" onerror="handleImageError(this)">
+                    <img src="${ASSET_BASE}/character/character_sd_l/chr_sp_${c.id}.webp" alt="${c.givenName || ''}" loading="lazy" fetchpriority="low" decoding="async" onerror="handleImageError(this)">
                     <span>${c.firstName || ''}${c.givenName || ''}</span>
                 `;
                 div.onclick = () => {
@@ -4762,7 +4762,7 @@
                 const div = document.createElement('div');
                 div.className = 'char-item';
                 div.innerHTML = `
-                    <img src="${ASSET_BASE}/character/character_sd_l/chr_sp_${c.id}.png" alt="${c.givenName || ''}" loading="lazy" fetchpriority="low" decoding="async" onerror="handleImageError(this)">
+                    <img src="${ASSET_BASE}/character/character_sd_l/chr_sp_${c.id}.webp" alt="${c.givenName || ''}" loading="lazy" fetchpriority="low" decoding="async" onerror="handleImageError(this)">
                     <span>${c.firstName || ''}${c.givenName || ''}</span>
                 `;
                 div.onclick = () => {
@@ -5129,7 +5129,7 @@
                         vocalNames.push(name);
 
                         const cImg = document.createElement('img');
-                        cImg.src = `${ASSET_BASE}/character/character_sd_l/chr_sp_${c.characterId}.png`;
+                        cImg.src = `${ASSET_BASE}/character/character_sd_l/chr_sp_${c.characterId}.webp`;
                         cImg.title = name;
                         cImg.onerror = function() {
                             if (!this.dataset.retried) {
@@ -5361,7 +5361,7 @@
                             if (gc) vocalNames.push(`${gc.firstName || ''}${gc.givenName || ''}`);
 
                             const cImg = document.createElement('img');
-                            cImg.src = `${ASSET_BASE}/character/character_sd_l/chr_sp_${c.characterId}.png`;
+                            cImg.src = `${ASSET_BASE}/character/character_sd_l/chr_sp_${c.characterId}.webp`;
                             cImg.onerror = function() {
                                 if (!this.dataset.retried) {
                                     this.dataset.retried = 'true';
