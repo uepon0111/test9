@@ -519,7 +519,27 @@ async function loadAll(){
 let settings={...defaults};
 
 async function saveSetting(k,v){settings[k]=v;await put('settings',{key:k,value:v})}
-async function saveTrack(t){await put('tracks',t)}
+async function saveTrack(t){
+  // WebKit系ではBlob/FileのIndexedDB保存が不安定なため、バイナリはArrayBufferで永続化する。
+  const v={...t};
+  if(v.blob instanceof Blob){
+    v.audioData=await v.blob.arrayBuffer();
+    v.mime=v.mime||v.blob.type||'application/octet-stream';
+    delete v.blob;
+  }
+  if(v.cover instanceof Blob){
+    v.coverData=await v.cover.arrayBuffer();
+    v.coverMime=v.coverMime||v.cover.type||'image/jpeg';
+    delete v.cover;
+  }
+  // 以前の描画用一時URLは永続化しない。
+  delete v._coverUrl;
+  await put('tracks',v);
+  // メモリ上も新形式へ正規化し、以後の更新でBlobを再保存しない。
+  if('audioData' in v){t.audioData=v.audioData;delete t.blob}
+  if('coverData' in v){t.coverData=v.coverData;t.coverMime=v.coverMime;delete t.cover}
+  delete t._coverUrl;
+}
 async function savePlaylist(p){p.updatedAt=Date.now();await put('playlists',p)}
 async function saveTag(t){await put('tags',t)}
 async function saveArtist(a){await put('artists',a)}
@@ -550,11 +570,32 @@ function artistUrl(a){
   a._url=URL.createObjectURL(a.icon);
   return a._url;
 }
+const coverBlobCache=new WeakMap();
+const coverUrlCache=new WeakMap();
+function trackBlob(s){
+  if(!s)return null;
+  if(s.blob instanceof Blob)return s.blob;
+  if(s.audioData==null)return null;
+  return new Blob([s.audioData],{type:s.mime||'application/octet-stream'});
+}
+function coverBlob(s){
+  if(!s)return null;
+  if(s.cover instanceof Blob)return s.cover;
+  if(s.coverData==null)return null;
+  let b=coverBlobCache.get(s);
+  if(!b){b=new Blob([s.coverData],{type:s.coverMime||'image/jpeg'});coverBlobCache.set(s,b)}
+  return b;
+}
 function coverUrl(s){
-  if(!s?.cover)return '';
-  if(s._coverUrl)return s._coverUrl;
-  s._coverUrl=URL.createObjectURL(s.cover);
-  return s._coverUrl;
+  const b=coverBlob(s);if(!b)return '';
+  let u=coverUrlCache.get(s);
+  if(!u){u=URL.createObjectURL(b);coverUrlCache.set(s,u)}
+  return u;
+}
+function revokeCoverUrl(s){
+  const u=coverUrlCache.get(s);
+  if(u){URL.revokeObjectURL(u);coverUrlCache.delete(s)}
+  coverBlobCache.delete(s);
 }
 function th(s,px,c=''){
   if(!s)return `<div class="th ${c}" style="--s:${px}px;background:${g(225)}" data-c="?"></div>`;
@@ -1009,7 +1050,7 @@ async function performDeleteTracks(ids){
   const deletingCurrent=ids.includes(currentTrackId);
   for(const id of ids){
     const s=byId(id);if(!s)continue;
-    if(s._coverUrl)URL.revokeObjectURL(s._coverUrl);
+    revokeCoverUrl(s);
     await delKey('tracks',id);
     S=S.filter(x=>x.id!==id);
     const related=plays.filter(p=>p.trackId===id);
@@ -1205,7 +1246,7 @@ function bytes(n){
   n=Number(n)||0;if(n<1024)return `${n} B`;if(n<1024**2)return `${(n/1024).toFixed(1)} KB`;if(n<1024**3)return `${(n/1024**2).toFixed(1)} MB`;return `${(n/1024**3).toFixed(2)} GB`;
 }
 function storageInfo(){
-  const audioBytes=S.reduce((n,s)=>n+(s.size||s.blob?.size||0),0),coverBytes=S.reduce((n,s)=>n+(s.cover?.size||0),0),metaBytes=S.reduce((n,s)=>n+JSON.stringify({...s,blob:undefined,cover:undefined}).length,0),cacheBytes=0;
+  const audioBytes=S.reduce((n,s)=>n+(s.size||s.blob?.size||s.audioData?.byteLength||0),0),coverBytes=S.reduce((n,s)=>n+(s.cover?.size||s.coverData?.byteLength||0),0),metaBytes=S.reduce((n,s)=>n+JSON.stringify({...s,blob:undefined,cover:undefined,audioData:undefined,coverData:undefined}).length,0),cacheBytes=0;
   return {audioBytes,coverBytes,metaBytes,cacheBytes,total:audioBytes+coverBytes+metaBytes+cacheBytes};
 }
 function buildSettings(){
@@ -1281,7 +1322,9 @@ async function loadTrackToAudio(id,autoplay=true){
   if(oldId&&oldId!==id&&currentPlayId)await persistPlaySession(true);
   if(currentUrl){URL.revokeObjectURL(currentUrl);currentUrl=''}
   currentTrackId=id;
-  currentUrl=URL.createObjectURL(s.blob);
+  const blob=trackBlob(s);
+  if(!blob){toast('音声データを読み込めませんでした。この曲を削除して再追加してください');return false}
+  currentUrl=URL.createObjectURL(blob);
   audio.src=currentUrl;audio.playbackRate=player.speed;audio.load();
   player.key=s.key||'C';
   updatePlayerUI();
@@ -1450,7 +1493,7 @@ async function saveTrackFromModal(){
   s.tagIds=$$('#edTags [data-tag].on').map(b=>b.dataset.tag);
   const d=$('#edDate').value;s.publishedAt=d?new Date(`${d}T12:00:00`).getTime():null;
   s.key=$('#edKey').value;
-  if(pendingCover){s.cover=pendingCover;pendingCover=null;pendingCover=null}
+  if(pendingCover){s.cover=pendingCover;s.coverData=undefined;s.coverMime=pendingCover.type||'image/jpeg';pendingCover=null}
   await saveTrack(s);refreshAll();closeM();toast('保存しました');
 }
 async function saveModal(){
@@ -1494,13 +1537,13 @@ async function performDeleteModal(){
   }
   if(c.type==='clear-cache'){
     try{if('caches' in window){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}}catch{}
-    S.forEach(s=>{if(s._coverUrl){URL.revokeObjectURL(s._coverUrl);s._coverUrl=''}});TAGS.forEach(t=>{});refreshAll();closeM();toast('キャッシュを削除しました');return;
+    S.forEach(revokeCoverUrl);TAGS.forEach(t=>{});refreshAll();closeM();toast('キャッシュを削除しました');return;
   }
   if(c.type==='clear-all'){
     try{stopPlayback()}catch{}
     for(const t of TAGS){if(t._url)URL.revokeObjectURL(t._url)}
     for(const a of ARTISTS){if(a._url)URL.revokeObjectURL(a._url)}
-    for(const s of S){if(s._coverUrl)URL.revokeObjectURL(s._coverUrl)}
+    for(const s of S)revokeCoverUrl(s);
     await Promise.all(STORES.map(clearStore));S=[];PL=[];TAGS=[];ARTISTS=[];plays=[];selected.clear();currentPlaylistId=null;closeM();refreshAll();buildSettings();toast('ローカルデータをすべて削除しました');return;
   }
 }
