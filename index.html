@@ -724,7 +724,8 @@ function cyc(el,ms){
 }
 
 /* ---- アップロードとメタデータ ---- */
-const audioExtensions=/\.(mp3|m4a|mp4|aac|wav|flac|ogg|oga|opus|weba)$/i;
+const COVER_PARSER_VERSION=3;
+const audioExtensions=/\.(mp3|m4a|mp4|m4b|m4r|m4p|aac|wav|flac|ogg|oga|opus|weba)$/i;
 const textDecoder=(bytes,enc)=>{
   try{
     if(enc===0)return new TextDecoder('iso-8859-1').decode(bytes);
@@ -951,26 +952,38 @@ async function parseMetadata(file){
   const buf=await file.arrayBuffer(),name=file.name.replace(/\.[^.]+$/,'');
   let m={title:name,artist:'',date:null,cover:null};
   try{
-    if(/^audio\/mpeg$/i.test(file.type)||/\.mp3$/i.test(file.name))Object.assign(m,decodeID3Frames(buf));
-    else if(/\.flac$/i.test(file.name)||/audio\/flac/i.test(file.type))Object.assign(m,decodeFLAC(buf));
-    else if(/\.m4a$|\.mp4$/i.test(file.name)||/audio\/mp4|video\/mp4/i.test(file.type))Object.assign(m,decodeMP4(buf));
-    else if(/\.ogg$|\.oga$|\.opus$/i.test(file.name)||/ogg|opus/i.test(file.type))Object.assign(m,decodeOgg(buf));
-    else if(/\.wav$/i.test(file.name)||/audio\/wav|audio\/x-wav|audio\/wave/i.test(file.type))Object.assign(m,decodeWav(buf));
+    const lowerName=String(file.name||'').toLocaleLowerCase();
+    const type=String(file.type||'').toLocaleLowerCase();
+    const head=new Uint8Array(buf,0,Math.min(buf.byteLength,16));
+    const startsWithId3=head.length>=3&&head[0]===0x49&&head[1]===0x44&&head[2]===0x33;
+    const startsWithFtyp=head.length>=8&&String.fromCharCode(...head.slice(4,8))==='ftyp';
+    // ID3v2はMP3だけでなく、raw AAC/AIFFやコンテナ前置きにも使われるため、
+    // 拡張子やMIME判定とは独立して先頭のID3を必ず解析する。
+    if(startsWithId3)Object.assign(m,decodeID3Frames(buf));
+    if(/^audio\/mpeg$/i.test(type)||/\.mp[23]$/i.test(lowerName))Object.assign(m,decodeID3Frames(buf));
+    else if(/\.flac$/i.test(lowerName)||/audio\/flac/i.test(type))Object.assign(m,decodeFLAC(buf));
+    else if(/\.(?:m4a|m4b|m4r|m4p|mp4)$/i.test(lowerName)||/audio\/mp4|video\/mp4/i.test(type)||startsWithFtyp)Object.assign(m,decodeMP4(buf));
+    else if(/\.(?:ogg|oga|opus|weba)$/i.test(lowerName)||/ogg|opus|webm/i.test(type))Object.assign(m,decodeOgg(buf));
+    else if(/\.wav$/i.test(lowerName)||/audio\/wav|audio\/x-wav|audio\/wave/i.test(type))Object.assign(m,decodeWav(buf));
+    else if(/\.(?:aac|aif|aiff|aifc)$/i.test(lowerName)||/audio\/aac|audio\/aiff|audio\/x-aiff/i.test(type)){
+      if(startsWithId3)Object.assign(m,decodeID3Frames(buf));
+    }
   }catch(e){console.warn('metadata parse failed',file.name,e)}
-  const date=m.date&&/^\d{4}(?:-\d{2})?(?:-\d{2})?/.test(m.date)?new Date(m.date.length===4?`${m.date}-01-01`:m.date.length===7?`${m.date}-01`:m.date):null;
+  const date=m.date&&/^\d{4}(?:-\d{2})?(?:-\d{2})?$/.test(m.date)?new Date(m.date.length===4?`${m.date}-01-01`:m.date.length===7?`${m.date}-01`:m.date):null;
   return {...m,title:trimText(m.title)||name,artist:trimText(m.artist),publishedAt:date&&!Number.isNaN(date.getTime())?date.getTime():null,source:file,cover:m.cover||null};
 }
 
 async function recoverMissingCovers(){
   let changed=0;
   for(const s of S){
-    if(coverBlob(s)||s.coverChecked||s.audioData==null)continue;
+    if(coverBlob(s)||s.coverParserVersion===COVER_PARSER_VERSION||s.audioData==null)continue;
     try{
       const ext=(s.name?.match(/\.[^.]+$/)?.[0])||({
-        'audio/mpeg':'.mp3','audio/flac':'.flac','audio/mp4':'.m4a','video/mp4':'.mp4','audio/ogg':'.ogg','audio/opus':'.opus','audio/wav':'.wav','audio/x-wav':'.wav','audio/wave':'.wav'
+        'audio/mpeg':'.mp3','audio/flac':'.flac','audio/mp4':'.m4a','video/mp4':'.mp4','audio/ogg':'.ogg','audio/opus':'.opus','audio/wav':'.wav','audio/x-wav':'.wav','audio/wave':'.wav','audio/aac':'.aac','audio/aiff':'.aiff','audio/x-aiff':'.aiff'
       }[s.mime]||'');
       const f=new File([s.audioData],s.name||`${s.title||'audio'}${ext}`,{type:s.mime||'application/octet-stream'});
       const meta=await parseMetadata(f);
+      s.coverParserVersion=COVER_PARSER_VERSION;
       s.coverChecked=true;
       if(meta.cover){
         revokeCoverUrl(s);
@@ -978,13 +991,15 @@ async function recoverMissingCovers(){
         await saveTrack(s);
         changed++;
       }else{
-        await put('tracks',{...s,coverChecked:true});
+        // 旧形式のBlobを永続化しないように、現在の正規化形式で保存する。
+        await put('tracks',{...s,blob:undefined,cover:undefined,audioData:s.audioData,coverData:s.coverData,coverChecked:true,coverParserVersion:COVER_PARSER_VERSION});
       }
     }catch(e){console.warn('cover recovery failed',s.title,e)}
     await new Promise(r=>setTimeout(r,0));
   }
   if(changed)refreshAll();
 }
+
 async function readAudioDuration(blob){
   return new Promise(resolve=>{
     const u=URL.createObjectURL(blob),a=document.createElement('audio');a.preload='metadata';
@@ -1020,7 +1035,7 @@ async function addFiles(files){
       for(const name of splitArtists(meta.artist)){const id=await ensureArtist(name);if(id)artistIds.push(id)}
       const duration=await readAudioDuration(file);
       render(file.name,'保存しています',(done+.85)/list.length*100);
-      const t={id:uuid(),name:file.name,title:meta.title,artistIds,tagIds:[],publishedAt:meta.publishedAt,cover:meta.cover,coverChecked:true,key:'C',addedAt:Date.now(),duration,size:file.size,mime:file.type||'application/octet-stream',blob:file.slice(),h:hue(meta.title),analysis:'自動解析完了'};
+      const t={id:uuid(),name:file.name,title:meta.title,artistIds,tagIds:[],publishedAt:meta.publishedAt,cover:meta.cover,coverChecked:true,coverParserVersion:COVER_PARSER_VERSION,key:'C',addedAt:Date.now(),duration,size:file.size,mime:file.type||'application/octet-stream',blob:file.slice(),h:hue(meta.title),analysis:'自動解析完了'};
       await saveTrack(t);S.push(t);done++;
     }catch(e){console.error(e);toast(`追加に失敗しました：${file.name}`)}
     processing=0;render(file.name,done===list.length?'追加処理完了':'次のファイルを準備中',done/list.length*100);
