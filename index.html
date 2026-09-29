@@ -725,127 +725,265 @@ function cyc(el,ms){
 
 /* ---- アップロードとメタデータ ---- */
 const audioExtensions=/\.(mp3|m4a|mp4|aac|wav|flac|ogg|oga|opus|weba)$/i;
-function textDecoder(bytes,enc){
+const textDecoder=(bytes,enc)=>{
   try{
     if(enc===0)return new TextDecoder('iso-8859-1').decode(bytes);
     if(enc===1)return new TextDecoder('utf-16').decode(bytes);
     if(enc===2)return new TextDecoder('utf-16be').decode(bytes);
     return new TextDecoder('utf-8').decode(bytes);
   }catch{return new TextDecoder().decode(bytes)}
-}
-function trimText(s){return String(s||'').replace(/\0/g,'').replace(/\s+$/,'').trim()}
+};
+const trimText=s=>String(s||'').replace(/\0/g,'').replace(/\s+$/,'').trim();
 function splitArtists(v){
   return [...new Set(String(v||'').split(/\s*(?:\/|;|,|&|\bfeat\.?\b|\bft\.?\b|・)\s*/i).map(x=>trimText(x)).filter(Boolean))];
 }
-function decodeID3Frames(buf){
-  const b=new Uint8Array(buf);if(b.length<10||String.fromCharCode(...b.slice(0,3))!=='ID3')return {};
-  const ver=b[3],flags=b[5],size=(b[6]<<21)|(b[7]<<14)|(b[8]<<7)|b[9],start=10+(flags&0x40?10:0),end=Math.min(b.length,start+size);
-  const out={};let p=start;
-  while(p+10<=end){
-    const id=String.fromCharCode(...b.slice(p,p+4));let fs=ver===4?((b[p+4]<<21)|(b[p+5]<<14)|(b[p+6]<<7)|b[p+7]):(((b[p+4]<<24)>>>0)|(b[p+5]<<16)|(b[p+6]<<8)|b[p+7]);
-    if(!/^[A-Z0-9]{4}$/.test(id)||fs<=0){p+=1;continue}
-    const d=b.slice(p+10,p+10+fs);if(d.length<fs)break;
-    if(id==='TIT2'||id==='TPE1'||id==='TDRC'||id==='TYER'){
-      const v=trimText(textDecoder(d.slice(1),d[0]??3).replace(/\u0000/g,' / '));
-      if(id==='TIT2')out.title=v;else if(id==='TPE1')out.artist=v;else if(!out.date)out.date=v;
-    }else if(id==='APIC'){
-      const enc=d[0]??3;let q=1;
-      while(q<d.length&&d[q]!==0)q++;const mime=new TextDecoder().decode(d.slice(1,q))||'image/jpeg';q++;
-      q++;while(q<d.length&&d[q]!==0)q++;q++;
-      const pic=d[q];q++;
-      while(q<d.length&&d[q]!==0)q+=enc===1||enc===2?2:1;
-      q+=enc===1||enc===2?2:1;
-      if(q<d.length)out.cover=new Blob([d.slice(q)],{type:mime});
-    }
-    p+=10+fs;
-  }
-  return out;
-}
+function be24(b,o){return (b[o]<<16)|(b[o+1]<<8)|b[o+2]}
 function be32(b,o){return ((b[o]<<24)>>>0)|(b[o+1]<<16)|(b[o+2]<<8)|b[o+3]}
 function le16(b,o){return b[o]|(b[o+1]<<8)}
 function le32(b,o){return (b[o]|(b[o+1]<<8)|(b[o+2]<<16)|(b[o+3]<<24))>>>0}
-function decodeFLAC(buf){
-  const b=new Uint8Array(buf);if(b.length<4||new TextDecoder().decode(b.slice(0,4))!=='fLaC')return {};
-  let p=4,out={};
-  while(p+4<=b.length){
-    const last=!!(b[p]&128),type=b[p]&127,len=(b[p+1]<<16)|(b[p+2]<<8)|b[p+3],d=b.slice(p+4,p+4+len);p+=4+len;
-    if(type===4){
-      let q=0;if(d.length<4)continue;const vendor=le32(d,0);q=4+vendor;const n=le32(d,q);q+=4;
-      for(let i=0;i<n&&q+4<=d.length;i++){const l=le32(d,q);q+=4;const s=new TextDecoder().decode(d.slice(q,q+l));q+=l;const eq=s.indexOf('=');if(eq<0)continue;const k=s.slice(0,eq).toUpperCase(),v=trimText(s.slice(eq+1));if(k==='TITLE')out.title=v;else if(k==='ARTIST')out.artist=(out.artist?out.artist+' / ':'')+v;else if(k==='DATE')out.date=v;else if(k==='DESCRIPTION')out.description=v}
-    }else if(type===6&&d.length>32){
-      let q=0;const picType=be32(d,0);q=4;const ml=be32(d,q);q+=4;const mime=new TextDecoder().decode(d.slice(q,q+ml));q+=ml;const dl=be32(d,q);q+=4+dl;
-      q+=20;if(q+4<=d.length){const dl2=be32(d,q);q+=4;const blob=new Blob([d.slice(q,q+dl2)],{type:mime||'image/jpeg'});if(picType===3||!out.cover)out.cover=blob}
-    }
-    if(last)break;
-  }return out;
+function syncsafe32(b,o){return ((b[o]&0x7f)<<21)|((b[o+1]&0x7f)<<14)|((b[o+2]&0x7f)<<7)|(b[o+3]&0x7f)}
+function unsynchronize(b){
+  const out=new Uint8Array(b.length);let n=0;
+  for(let i=0;i<b.length;i++){const v=b[i];out[n++]=v;if(v===0xff&&b[i+1]===0x00)i++}
+  return out.slice(0,n);
 }
-function decodeOgg(buf){
-  const u8=new Uint8Array(buf),txt=new TextDecoder().decode(u8);
-  const out={};
-  const find=k=>{const m=txt.match(new RegExp('(?:^|\\0)'+k+'=([^\\0\\n\\r]+)','i'));return m?trimText(m[1]):''};
-  out.title=find('TITLE');out.artist=find('ARTIST');out.date=find('DATE')||find('ORIGINALDATE');
-  const cover=find('METADATA_BLOCK_PICTURE');if(cover){try{
-    const bin=atob(cover),b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);
-    out.cover=parsePictureBlock(b);
-  }catch{}}
+function imageMime(bytes,fallback='image/jpeg'){
+  const b=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes||0);
+  if(b.length>=3&&b[0]===0xff&&b[1]===0xd8&&b[2]===0xff)return 'image/jpeg';
+  if(b.length>=8&&b[0]===0x89&&b[1]===0x50&&b[2]===0x4e&&b[3]===0x47&&b[4]===0x0d&&b[5]===0x0a&&b[6]===0x1a&&b[7]===0x0a)return 'image/png';
+  if(b.length>=6){const s=String.fromCharCode(...b.slice(0,6));if(s==='GIF87a'||s==='GIF89a')return 'image/gif'}
+  if(b.length>=12&&String.fromCharCode(...b.slice(0,4))==='RIFF'&&String.fromCharCode(...b.slice(8,12))==='WEBP')return 'image/webp';
+  if(b.length>=2&&b[0]===0x42&&b[1]===0x4d)return 'image/bmp';
+  return /^image\//i.test(fallback)?fallback:'image/jpeg';
+}
+function makeImageBlob(bytes,mime=''){
+  const b=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes||0);
+  if(!b.length)return null;
+  return new Blob([b],{type:imageMime(b,mime)});
+}
+function findZero(bytes,start,end){for(let i=start;i<end;i++)if(bytes[i]===0)return i;return -1}
+function findUtf16Zero(bytes,start,end){for(let i=start;i+1<end;i+=2)if(bytes[i]===0&&bytes[i+1]===0)return i;return -1}
+function readId3Text(data){
+  if(!data?.length)return '';
+  const enc=data[0]??3;
+  const raw=textDecoder(data.slice(1),enc);
+  return trimText(raw.split(/\u0000+/)[0]||raw.split(/\u0000+/).filter(Boolean).join(' / '));
+}
+function parseApic(data,ver){
+  if(!data?.length)return null;
+  const enc=data[0]??3;let q=1;
+  const mimeEnd=findZero(data,q,data.length);if(mimeEnd<0)return null;
+  let mime=new TextDecoder('iso-8859-1').decode(data.slice(q,mimeEnd)).trim();q=mimeEnd+1;
+  if(!mime)mime='image/jpeg';
+  if(q>=data.length)return null;
+  const pictureType=data[q++];
+  let descEnd;
+  if(enc===1||enc===2)descEnd=findUtf16Zero(data,q,data.length);else descEnd=findZero(data,q,data.length);
+  if(descEnd<0)return null;
+  q=descEnd+(enc===1||enc===2?2:1);
+  if(q>=data.length)return null;
+  if(mime==='-->')return {type:pictureType,blob:null};
+  return {type:pictureType,blob:makeImageBlob(data.slice(q),mime)};
+}
+function decodeId3PicV22(data){
+  if(!data?.length)return null;
+  const format=new TextDecoder('iso-8859-1').decode(data.slice(1,4)).toLowerCase();
+  if(data.length<6)return null;
+  let q=5;const pictureType=data[q++];
+  const end=findZero(data,q,data.length);if(end<0)return null;
+  q=end+1;
+  return {type:pictureType,blob:makeImageBlob(data.slice(q),format==='png'?'image/png':format==='jpg'?'image/jpeg':'')};
+}
+function decodeID3Frames(buf){
+  let b=new Uint8Array(buf);if(b.length<10||String.fromCharCode(...b.slice(0,3))!=='ID3')return {};
+  const ver=b[3],flags=b[5],tagSize=syncsafe32(b,6);
+  if(ver<2||ver>4)return {};
+  const tagEnd=Math.min(b.length,10+tagSize+(ver===4&&(flags&0x10)?10:0));
+  let body=b.slice(10,Math.min(b.length,10+tagSize));
+  if(flags&0x80)body=unsynchronize(body);
+  let p=0;
+  if(flags&0x40){
+    if(ver===3&&body.length>=4){const extSize=be32(body,0);p=Math.min(body.length,4+extSize)}
+    else if(ver===4&&body.length>=4){const extSize=syncsafe32(body,0);p=Math.min(body.length,extSize)}
+  }
+  const frameSize=ver===2?6:10, out={};let bestCover=null;
+  while(p+frameSize<=body.length){
+    const idLen=ver===2?3:4,id=String.fromCharCode(...body.slice(p,p+idLen));
+    if(!/^[A-Z0-9]{3,4}$/.test(id))break;
+    const fs=ver===2?be24(body,p+3):(ver===4?syncsafe32(body,p+4):be32(body,p+4));
+    if(!fs){break}
+    if(p+frameSize+fs>body.length)break;
+    const data=body.slice(p+frameSize,p+frameSize+fs);
+    const isText=ver===2?(id==='TT2'||id==='TP1'||id==='TYE'):(id==='TIT2'||id==='TPE1'||id==='TDRC'||id==='TYER');
+    const pic=ver===2?(id==='PIC'?decodeId3PicV22(data):null):(id==='APIC'?parseApic(data,ver):null);
+    if(isText){
+      const v=readId3Text(data);
+      if(id==='TT2'||id==='TIT2')out.title=v;
+      else if(id==='TP1'||id==='TPE1')out.artist=v;
+      else if(!out.date&&(id==='TDRC'||id==='TYER'||id==='TYE'))out.date=v;
+    }
+    if(pic?.blob&&(!bestCover||pic.type===3||bestCover.type!==3))bestCover=pic;
+    p+=frameSize+fs;
+  }
+  if(bestCover?.blob)out.cover=bestCover.blob;
+  // Keep the bound calculation explicit so malformed tags cannot make us parse beyond the tag.
+  void tagEnd;
   return out;
 }
 function parsePictureBlock(d){
   try{
-    if(d.length<32)return null;let q=0;q+=4;const ml=be32(d,q);q+=4;const mime=new TextDecoder().decode(d.slice(q,q+ml));q+=ml;const dl=be32(d,q);q+=4+dl;q+=16;const dl2=be32(d,q);q+=4;return new Blob([d.slice(q,q+dl2)],{type:mime||'image/jpeg'})
+    if(d.length<32)return null;let q=0;
+    const picType=be32(d,q);q+=4;
+    const ml=be32(d,q);q+=4;if(q+ml>d.length)return null;
+    const mime=new TextDecoder().decode(d.slice(q,q+ml));q+=ml;
+    const dl=be32(d,q);q+=4;if(q+dl>d.length)return null;
+    q+=dl;
+    if(q+16+4>d.length)return null;
+    q+=16;
+    const dataLen=be32(d,q);q+=4;
+    if(q+dataLen>d.length)return null;
+    return {type:picType,blob:makeImageBlob(d.slice(q,q+dataLen),mime)};
   }catch{return null}
+}
+function decodeFLAC(buf){
+  let b=new Uint8Array(buf),start=0;
+  if(b.length>=3&&String.fromCharCode(...b.slice(0,3))==='ID3')start=Math.min(b.length,10+syncsafe32(b,6));
+  if(start+4>b.length||new TextDecoder().decode(b.slice(start,start+4))!=='fLaC')return {};
+  let p=start+4,out={},best=null;
+  while(p+4<=b.length){
+    const last=!!(b[p]&128),type=b[p]&127,len=(b[p+1]<<16)|(b[p+2]<<8)|b[p+3];
+    const blockStart=p+4,blockEnd=blockStart+len;if(blockEnd>b.length)break;
+    const d=b.slice(blockStart,blockEnd);p=blockEnd;
+    if(type===4){
+      if(d.length>=8){let q=0;const vendor=le32(d,q);q+=4+vendor;if(q+4<=d.length){const n=le32(d,q);q+=4;
+        for(let i=0;i<n&&q+4<=d.length;i++){const l=le32(d,q);q+=4;if(q+l>d.length)break;const s=new TextDecoder().decode(d.slice(q,q+l));q+=l;const eq=s.indexOf('=');if(eq<0)continue;const k=s.slice(0,eq).toUpperCase(),v=trimText(s.slice(eq+1));if(k==='TITLE')out.title=v;else if(k==='ARTIST')out.artist=(out.artist?out.artist+' / ':'')+v;else if(k==='DATE'||k==='ORIGINALDATE')out.date=v;}
+      }}
+    }else if(type===6){
+      const pic=parsePictureBlock(d);if(pic?.blob&&(!best||pic.type===3||best.type!==3))best=pic;
+    }
+    if(last)break;
+  }
+  if(best?.blob)out.cover=best.blob;
+  return out;
+}
+function parseVorbisComments(packet,offset){
+  const b=packet;let p=offset,out={};
+  const readString=()=>{if(p+4>b.length)return null;const len=le32(b,p);p+=4;if(len>0x7fffffff||p+len>b.length)return null;const s=new TextDecoder().decode(b.slice(p,p+len));p+=len;return s};
+  const vendor=readString();if(vendor===null)return out;
+  if(p+4>b.length)return out;const count=le32(b,p);p+=4;
+  for(let i=0;i<count&&p+4<=b.length;i++){
+    const s=readString();if(s===null)break;
+    const eq=s.indexOf('=');if(eq<0)continue;const k=s.slice(0,eq).toUpperCase(),v=s.slice(eq+1);
+    if(k==='TITLE'&&!out.title)out.title=trimText(v);
+    else if(k==='ARTIST')out.artist=(out.artist?out.artist+' / ':'')+trimText(v);
+    else if((k==='DATE'||k==='ORIGINALDATE')&&!out.date)out.date=trimText(v);
+    else if(k==='METADATA_BLOCK_PICTURE'&&!out.cover){try{const bin=atob(v),x=new Uint8Array(bin.length);for(let j=0;j<bin.length;j++)x[j]=bin.charCodeAt(j);const pic=parsePictureBlock(x);if(pic?.blob)out.cover=pic.blob}catch{}}
+    else if((k==='COVERART'&&!out.cover)){try{const bin=atob(v),x=new Uint8Array(bin.length);for(let j=0;j<bin.length;j++)x[j]=bin.charCodeAt(j);const blob=makeImageBlob(x);if(blob)out.cover=blob}catch{}}
+  }
+  return out;
+}
+function oggPackets(buf){
+  const b=new Uint8Array(buf),state=new Map(),packets=[];let p=0;
+  while(p+27<=b.length){
+    if(String.fromCharCode(...b.slice(p,p+4))!=='OggS'){p++;continue}
+    const segCount=b[p+26],tableEnd=p+27+segCount;if(tableEnd>b.length)break;
+    const serial=le32(b,p+14),continued=!!(b[p+5]&1),lacing=b.slice(p+27,tableEnd),dataStart=tableEnd,total=lacing.reduce((n,v)=>n+v,0),dataEnd=dataStart+total;
+    if(dataEnd>b.length)break;
+    let cur=state.get(serial)||new Uint8Array(0);let q=dataStart;
+    if(!continued&&cur.length)cur=new Uint8Array(0);
+    for(const seg of lacing){
+      const next=new Uint8Array(cur.length+seg);next.set(cur);next.set(b.slice(q,q+seg),cur.length);cur=next;q+=seg;
+      if(seg<255){packets.push(cur);cur=new Uint8Array(0)}
+    }
+    state.set(serial,cur);p=dataEnd;
+  }
+  return packets;
+}
+function decodeOgg(buf){
+  const out={};
+  for(const packet of oggPackets(buf)){
+    let off=-1;
+    if(packet.length>=7&&packet[0]===3&&String.fromCharCode(...packet.slice(1,7))==='vorbis')off=7;
+    else if(packet.length>=8&&new TextDecoder().decode(packet.slice(0,8))==='OpusTags')off=8;
+    if(off<0)continue;
+    const x=parseVorbisComments(packet,off);
+    if(x.title&&!out.title)out.title=x.title;if(x.artist)out.artist=(out.artist?out.artist+' / ':'')+x.artist;else if(x.artist&&!out.artist)out.artist=x.artist;if(x.date&&!out.date)out.date=x.date;if(x.cover&&!out.cover)out.cover=x.cover;
+  }
+  return out;
+}
+function atomType(bytes,o){return new TextDecoder('iso-8859-1').decode(bytes.slice(o,o+4))}
+function decodeMP4(buf){
+  const b=new Uint8Array(buf),out={};
+  const textTypes=new Set(['©nam','©ART','©day','aART']);
+  function walk(start,end,parent=''){
+    let p=start;
+    while(p+8<=end){
+      let size=be32(b,p),head=8;
+      if(size===1){if(p+16>end)break;const hi=be32(b,p+8),lo=be32(b,p+12),big=BigInt(hi)*4294967296n+BigInt(lo);if(big>BigInt(Number.MAX_SAFE_INTEGER))break;size=Number(big);head=16}
+      else if(size===0)size=end-p;
+      if(size<head||p+size>end)break;
+      const type=atomType(b,p+4),a=p+head,z=p+size;
+      if(type==='meta'){if(a+4<=z)walk(a+4,z,type)}
+      else if(['moov','udta','ilst','trak','mdia','minf','stbl','stsd'].includes(type))walk(a,z,type)
+      else if(type==='data'&&parent==='covr'){
+        const payload=a+8<=z?b.slice(a+8,z):new Uint8Array(0);const blob=makeImageBlob(payload,imageMime(payload));if(blob&&!out.cover)out.cover=blob;
+      }else if(type==='data'&&textTypes.has(parent)){
+        const payload=a+8<=z?b.slice(a+8,z):new Uint8Array(0),v=trimText(new TextDecoder().decode(payload));
+        if(parent==='©nam'&&!out.title)out.title=v;else if(parent==='©ART')out.artist=v;else if(parent==='©day'&&!out.date)out.date=v;else if(parent==='aART'&&!out.artist)out.artist=v;
+      }else if(textTypes.has(type)||type==='covr'){walk(a,z,type)}
+      p+=size;
+    }
+  }
+  try{walk(0,b.length,'')}catch(e){console.warn('MP4 metadata parse failed',e)}
+  return out;
 }
 function decodeWav(buf){
   const b=new Uint8Array(buf);if(b.length<12||new TextDecoder().decode(b.slice(0,4))!=='RIFF'||new TextDecoder().decode(b.slice(8,12))!=='WAVE')return {};
   let p=12,out={};
   while(p+8<=b.length){
-    const id=new TextDecoder().decode(b.slice(p,p+4)),len=le32(b,p+4),d=b.slice(p+8,p+8+len);p+=8+len+(len%2);
-    if(id==='LIST'&&d.length>=4&&new TextDecoder().decode(d.slice(0,4))==='INFO'){let q=4;while(q+8<=d.length){const k=new TextDecoder().decode(d.slice(q,q+4),{stream:false}),n=le32(d,q+4),v=trimText(new TextDecoder().decode(d.slice(q+8,q+8+n)));if(k==='INAM')out.title=v;else if(k==='IART')out.artist=v;else if(k==='ICRD')out.date=v;q+=8+n+(n%2)}}
-  }return out;
-}
-function atomType(bytes,o){return new TextDecoder('iso-8859-1').decode(bytes.slice(o,o+4))}
-function decodeMP4(buf){
-  const b=new Uint8Array(buf),out={};
-  function walk(start,end,path){
-    let p=start;
-    while(p+8<=end){
-      let size=be32(b,p),head=8;if(size===1&&p+16<=end){size=Number((BigInt(be32(b,p+8))*4294967296n)+BigInt(be32(b,p+12)));head=16}
-      if(size===0)size=end-p;if(size<head||p+size>end)break;
-      const type=atomType(b,p+4),a=p+head,z=p+size;
-      if(type==='meta'){walk(a+4,z,path+'/meta')}
-      else if(['moov','udta','ilst','trak','mdia','minf','stbl','stsd'].includes(type))walk(a,z,path+'/'+type);
-      else if(path.endsWith('/ilst')){
-        if(type==='data' || type==='free'){} 
-        const key=type;
-        walk(a,z,path+'/'+key);
-      }else if(path.includes('/ilst/')){
-        const dataStart=type==='data'?a+8:a;
-        if(type==='data'&&dataStart<z){
-          const payload=b.slice(dataStart,z);
-          if(path.endsWith('/©nam'))out.title=trimText(new TextDecoder().decode(payload));
-          else if(path.endsWith('/©ART'))out.artist=trimText(new TextDecoder().decode(payload));
-          else if(path.endsWith('/©day'))out.date=trimText(new TextDecoder().decode(payload));
-          else if(path.endsWith('/covr')){const mime=payload[0]===0xFF?'image/jpeg':payload[0]===0x89?'image/png':'image/jpeg';out.cover=new Blob([payload],{type:mime})}
-        }
-      }
-      p+=size;
-    }
+    const id=new TextDecoder().decode(b.slice(p,p+4)),len=le32(b,p+4),end=Math.min(b.length,p+8+len),d=b.slice(p+8,end);p=p+8+len+(len%2);
+    if(id==='LIST'&&d.length>=4&&new TextDecoder().decode(d.slice(0,4))==='INFO'){let q=4;while(q+8<=d.length){const k=new TextDecoder().decode(d.slice(q,q+4)),n=le32(d,q+4),v=trimText(new TextDecoder().decode(d.slice(q+8,Math.min(d.length,q+8+n))));if(k==='INAM')out.title=v;else if(k==='IART')out.artist=v;else if(k==='ICRD')out.date=v;q+=8+n+(n%2)}}
+    else if(id==='ID3 '||id==='id3 '||id==='ID3'){const x=decodeID3Frames(d);out={...out,...x}}
   }
-  try{walk(0,b.length,'')}catch{}
   return out;
 }
 async function parseMetadata(file){
   const buf=await file.arrayBuffer(),name=file.name.replace(/\.[^.]+$/,'');
   let m={title:name,artist:'',date:null,cover:null};
   try{
-    if(/^audio\/mpeg$/.test(file.type)||/\.mp3$/i.test(file.name))Object.assign(m,decodeID3Frames(buf));
-    else if(/\.flac$/i.test(file.name))Object.assign(m,decodeFLAC(buf));
-    else if(/\.m4a$|\.mp4$|\.aac$/i.test(file.name))Object.assign(m,decodeMP4(buf));
-    else if(/\.ogg$|\.oga$|\.opus$/i.test(file.name))Object.assign(m,decodeOgg(buf));
-    else if(/\.wav$/i.test(file.name))Object.assign(m,decodeWav(buf));
+    if(/^audio\/mpeg$/i.test(file.type)||/\.mp3$/i.test(file.name))Object.assign(m,decodeID3Frames(buf));
+    else if(/\.flac$/i.test(file.name)||/audio\/flac/i.test(file.type))Object.assign(m,decodeFLAC(buf));
+    else if(/\.m4a$|\.mp4$/i.test(file.name)||/audio\/mp4|video\/mp4/i.test(file.type))Object.assign(m,decodeMP4(buf));
+    else if(/\.ogg$|\.oga$|\.opus$/i.test(file.name)||/ogg|opus/i.test(file.type))Object.assign(m,decodeOgg(buf));
+    else if(/\.wav$/i.test(file.name)||/audio\/wav|audio\/x-wav|audio\/wave/i.test(file.type))Object.assign(m,decodeWav(buf));
   }catch(e){console.warn('metadata parse failed',file.name,e)}
   const date=m.date&&/^\d{4}(?:-\d{2})?(?:-\d{2})?/.test(m.date)?new Date(m.date.length===4?`${m.date}-01-01`:m.date.length===7?`${m.date}-01`:m.date):null;
   return {...m,title:trimText(m.title)||name,artist:trimText(m.artist),publishedAt:date&&!Number.isNaN(date.getTime())?date.getTime():null,source:file,cover:m.cover||null};
+}
+
+async function recoverMissingCovers(){
+  let changed=0;
+  for(const s of S){
+    if(coverBlob(s)||s.coverChecked||s.audioData==null)continue;
+    try{
+      const ext=(s.name?.match(/\.[^.]+$/)?.[0])||({
+        'audio/mpeg':'.mp3','audio/flac':'.flac','audio/mp4':'.m4a','video/mp4':'.mp4','audio/ogg':'.ogg','audio/opus':'.opus','audio/wav':'.wav','audio/x-wav':'.wav','audio/wave':'.wav'
+      }[s.mime]||'');
+      const f=new File([s.audioData],s.name||`${s.title||'audio'}${ext}`,{type:s.mime||'application/octet-stream'});
+      const meta=await parseMetadata(f);
+      s.coverChecked=true;
+      if(meta.cover){
+        revokeCoverUrl(s);
+        s.cover=meta.cover;
+        await saveTrack(s);
+        changed++;
+      }else{
+        await put('tracks',{...s,coverChecked:true});
+      }
+    }catch(e){console.warn('cover recovery failed',s.title,e)}
+    await new Promise(r=>setTimeout(r,0));
+  }
+  if(changed)refreshAll();
 }
 async function readAudioDuration(blob){
   return new Promise(resolve=>{
@@ -882,7 +1020,7 @@ async function addFiles(files){
       for(const name of splitArtists(meta.artist)){const id=await ensureArtist(name);if(id)artistIds.push(id)}
       const duration=await readAudioDuration(file);
       render(file.name,'保存しています',(done+.85)/list.length*100);
-      const t={id:uuid(),title:meta.title,artistIds,tagIds:[],publishedAt:meta.publishedAt,cover:meta.cover, key:'C',addedAt:Date.now(),duration,size:file.size,mime:file.type||'application/octet-stream',blob:file.slice(),h:hue(meta.title),analysis:'自動解析完了'};
+      const t={id:uuid(),name:file.name,title:meta.title,artistIds,tagIds:[],publishedAt:meta.publishedAt,cover:meta.cover,coverChecked:true,key:'C',addedAt:Date.now(),duration,size:file.size,mime:file.type||'application/octet-stream',blob:file.slice(),h:hue(meta.title),analysis:'自動解析完了'};
       await saveTrack(t);S.push(t);done++;
     }catch(e){console.error(e);toast(`追加に失敗しました：${file.name}`)}
     processing=0;render(file.name,done===list.length?'追加処理完了':'次のファイルを準備中',done/list.length*100);
@@ -1739,6 +1877,7 @@ $('#app').addEventListener('click',e=>{if(e.target.closest('.scrim'))$('#app').c
     }
     buildSettings();updateLibraryOptions();renderManage();renderPlaylists();renderHome();route();updateSortUI();updatePlayerUI();
     dndPlaylist($('#pll'));
+    setTimeout(()=>recoverMissingCovers().catch(e=>console.warn('cover recovery failed',e)),0);
     setInterval(()=>persistPlaySession(false).catch(()=>{}),8000);
     syncSide();
   }catch(e){
