@@ -448,7 +448,7 @@ const av=(n,h,px)=>`<div class="th rd" style="--s:${px}px;background:${g(h)}" da
 const KEYS=['C','Cm','D','Dm','E','Em','F','G','Gm','A','Am','B♭'];
 const fg=h=>{const L=[1,3,5].map(k=>{const v=parseInt(h.substr(k,2),16)/255;return v<=.04?v/12.92:((v+.055)/1.055)**2.4});return .2126*L[0]+.7152*L[1]+.0722*L[2]>.215?'#20242B':'#fff'};
 let S=[],TAGS=[],A=[],PL=[],ANN=[],TOP=[],AR=[],TG=[];
-const DB_NAME='sonora-library-v1',DB_VERSION=1,TRACK_STORE='tracks';
+const DB_NAME='sonora-library-v1',DB_VERSION=2,TRACK_STORE='tracks',STATE_STORE='appState',STATE_KEY='main';
 let db=null,storageFallback=false,memoryTracks=[];
 const now=new Date();now.setHours(0,0,0,0);
 
@@ -466,7 +466,11 @@ function openDB(){
   if(db){resolve(db);return}
   if(!('indexedDB' in window)){reject(new Error('IndexedDB is unavailable'));return}
   const r=indexedDB.open(DB_NAME,DB_VERSION);
-  r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(TRACK_STORE))r.result.createObjectStore(TRACK_STORE,{keyPath:'id'})};
+  r.onupgradeneeded=()=>{
+   const d=r.result;
+   if(!d.objectStoreNames.contains(TRACK_STORE))d.createObjectStore(TRACK_STORE,{keyPath:'id'});
+   if(!d.objectStoreNames.contains(STATE_STORE))d.createObjectStore(STATE_STORE,{keyPath:'id'});
+  };
   r.onsuccess=()=>{db=r.result;resolve(db)};
   r.onerror=()=>reject(r.error||new Error('IndexedDBを開けませんでした'));
  });
@@ -476,6 +480,16 @@ const dbAll=async()=>{try{return await openDB().then(d=>new Promise((resolve,rej
 const dbPut=async o=>{try{return await idbTx('readwrite',st=>st.put(o))}catch{storageFallback=true;memoryTracks=[...memoryTracks.filter(x=>x.id!==o.id),o]}};
 const dbDelete=async id=>{try{return await idbTx('readwrite',st=>st.delete(id))}catch{storageFallback=true;memoryTracks=memoryTracks.filter(x=>x.id!==id)}};
 const dbClear=async()=>{try{return await idbTx('readwrite',st=>st.clear())}catch{storageFallback=true;memoryTracks=[]}};
+const appStateDefault=()=>({id:STATE_KEY,tags:[],artists:[],playlists:[],history:[],settings:{autoPlay:false,normalizeVolume:false,eqEnabled:true,eqPreset:0,eqValues:[0,0,0,0,0,0],speed:1,loop:false,shuffle:false}});
+let appState=appStateDefault();
+let stateSaveTimer=0;
+const localStateKey='sonora-app-state-v2';
+const dbStateGet=async()=>{try{const value=await openDB().then(d=>new Promise((resolve,reject)=>{const r=d.transaction(STATE_STORE,'readonly').objectStore(STATE_STORE).get(STATE_KEY);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)}));if(value)return value}catch{storageFallback=true}try{return JSON.parse(localStorage.getItem(localStateKey)||'null')}catch{return null}};
+const dbStatePut=async value=>{try{await openDB().then(d=>new Promise((resolve,reject)=>{const tx=d.transaction(STATE_STORE,'readwrite');tx.objectStore(STATE_STORE).put(value);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)}))}catch{storageFallback=true}try{localStorage.setItem(localStateKey,JSON.stringify(value))}catch{}};
+const normalizeState=raw=>{const d=appStateDefault(),r=raw&&typeof raw==='object'?raw:{};d.tags=Array.isArray(r.tags)?r.tags.map((t,i)=>({i,n:escText(t?.n||t?.name||`タグ${i+1}`),c:/^#[0-9a-f]{6}$/i.test(t?.c||t?.color||'')?(t.c||t.color):'#6366F1'})) : [];d.artists=Array.isArray(r.artists)?[...new Set(r.artists.map(escText).filter(Boolean))]:[];d.playlists=Array.isArray(r.playlists)?r.playlists.map((p,i)=>({id:String(p?.id||`pl-${Date.now()}-${i}`),n:escText(p?.n||p?.name||'無題のプレイリスト'),d:escText(p?.d||p?.description||''),ids:Array.isArray(p?.ids)?p.ids.map(String):[]})):[];d.history=Array.isArray(r.history)?r.history.map(h=>({trackId:String(h?.trackId||h?.id||''),startedAt:Number(h?.startedAt)||0,seconds:Math.max(0,Number(h?.seconds)||0)})).filter(h=>h.trackId):[];d.settings={...d.settings,...(r.settings&&typeof r.settings==='object'?r.settings:{})};d.settings.eqValues=Array.isArray(d.settings.eqValues)?Array.from({length:6},(_,i)=>Number(d.settings.eqValues[i])||0):[0,0,0,0,0,0];return d};
+function saveStateSync(){try{localStorage.setItem(localStateKey,JSON.stringify(appState))}catch{}}
+function scheduleStateSave(){saveStateSync();clearTimeout(stateSaveTimer);stateSaveTimer=setTimeout(()=>{dbStatePut(appState).catch(()=>{})},80)}
+async function loadAppState(){const raw=await dbStateGet();appState=normalizeState(raw);saveStateSync()}
 
 function mediaMime(file){if(file.type&&file.type.startsWith('audio/'))return file.type;const e=fileExt(file.name);return ({mp3:'audio/mpeg',wav:'audio/wav',flac:'audio/flac',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/opus',aac:'audio/aac',m4a:'audio/mp4',mp4:'audio/mp4',aiff:'audio/aiff',aif:'audio/aiff',webm:'audio/webm'})[e]||'application/octet-stream'}
 function isAudioFile(file){return !!file&&((file.type||'').startsWith('audio/')||/\.(mp3|wav|flac|ogg|oga|opus|aac|m4a|mp4|aiff|aif|webm)$/i.test(file.name||''))}
@@ -556,37 +570,61 @@ async function parseAudioFile(file){
  const fp=await fingerprint(file);
  return {id,fp,name:file.name,mime,size:file.size,lastModified:file.lastModified||0,addedAt:Date.now(),title,artistNames:[...new Set(String(meta.artist||'').split(/\u0000+/).map(escText).filter(Boolean))],album:escText(meta.album),genre:escText(meta.genre),pdTs:date.ts,pdPrecision:date.precision,duration:dur.duration,h:hashHue(title),p:0,k:'',g:[],blob:file,coverBlob:meta.cover?.blob||null,url:dur.url,coverUrl:''};
 }
+function storedTrack(s){const o={...s};delete o.i;delete o.pd;delete o.url;delete o.coverUrl;return o}
+async function saveTrack(s){if(!s)return;await dbPut(storedTrack(s));scheduleStateSave()}
+async function saveAllTrackMetadata(){await Promise.all(S.map(storedTrack).map(dbPut));scheduleStateSave()}
+function normalizeMetaStateAgainstTracks(){
+ const present=new Set(S.map(s=>s.id));
+ appState.playlists=appState.playlists.map(p=>({...p,ids:[...new Set((p.ids||[]).map(String).filter(id=>present.has(id)))]}));
+ const derived=[...new Set(S.flatMap(s=>s.artistNames||[]).map(escText).filter(Boolean))];
+ appState.artists=[...new Set([...(appState.artists||[]),...derived])];
+ TAGS=(appState.tags||[]).map((t,i)=>({i,n:t.n,c:t.c}));
+ A=[...new Set([...(appState.artists||[]),...derived])];
+ PL=appState.playlists;
+}
+function rebuildDerivedStats(){
+ A=[...new Set([...(appState.artists||[]),...S.flatMap(s=>s.artistNames||[])].map(escText).filter(Boolean))];
+ AR=A.map(n=>({n,h:hashHue(n),v:S.filter(s=>(s.artistNames||[]).includes(n)).reduce((x,s)=>x+(s.p||0),0),c:S.filter(s=>(s.artistNames||[]).includes(n)).length})).sort((a,b)=>b.v-a.v||a.n.localeCompare(b.n,'ja'));
+ TG=TAGS.map(t=>({t,v:S.reduce((x,s)=>x+((s.g||[]).includes(t.i)?Number(s.p||0):0),0)}));
+ ANN=S.filter(s=>s.pd).map(s=>({s,y:Math.max(0,now.getFullYear()-s.pd.getFullYear()),d:Math.abs((new Date(now.getFullYear(),s.pd.getMonth(),s.pd.getDate())-now)/864e5)})).sort((a,b)=>a.d-b.d).slice(0,4);
+ TOP=S.filter(s=>(s.p||0)>0).sort((a,b)=>(b.p||0)-(a.p||0));
+}
 function hydrateTracks(rows){
  const oldById=new Map(S.map(s=>[s.id,s]));
  const nextIds=new Set((rows||[]).map(s=>s.id));
  S.forEach(s=>{if(!nextIds.has(s.id)){if(s.url)URL.revokeObjectURL(s.url);if(s.coverUrl)URL.revokeObjectURL(s.coverUrl)}});
- S=(rows||[]).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)).map((s,i)=>{const old=oldById.get(s.id);return {...s,i,t:s.title||s.t||'',adTs:s.addedAt||s.adTs||null,p:Number(s.p)||0,g:Array.isArray(s.g)?s.g:[],artistNames:Array.isArray(s.artistNames)?s.artistNames:[],pd:s.pdTs?new Date(s.pdTs):null,d:Number(s.duration||s.d)||0,url:old?.url||URL.createObjectURL(s.blob),coverUrl:old?.coverUrl||(s.coverBlob?URL.createObjectURL(s.coverBlob):''),h:Number.isFinite(s.h)?s.h:hashHue(s.title||s.t||'')}});
- A=[...new Set(S.flatMap(s=>s.artistNames||[]))];
- TAGS=[];
- AR=A.map(n=>({n,h:hashHue(n),v:S.filter(s=>(s.artistNames||[]).includes(n)).reduce((x,s)=>x+(s.p||0),0),c:S.filter(s=>(s.artistNames||[]).includes(n)).length})).sort((a,b)=>b.v-a.v||a.n.localeCompare(b.n,'ja'));
- TG=[];
- ANN=S.filter(s=>s.pd).map(s=>({s,y:Math.max(0,now.getFullYear()-s.pd.getFullYear()),d:Math.abs((new Date(now.getFullYear(),s.pd.getMonth(),s.pd.getDate())-now)/864e5)})).filter(x=>x.d<=367).sort((a,b)=>a.d-b.d).slice(0,4);
- TOP=S.filter(s=>(s.p||0)>0).sort((a,b)=>(b.p||0)-(a.p||0));
- base=base.filter(id=>S.some(s=>s.id===id));order=order.filter(id=>S.some(s=>s.id===id));if(!S.length){if(media.src){media.pause();media.removeAttribute('src');media.load()}mediaTrackId=null;base=[];order=[];pos=0;playing=false;t=0}else if(!order.length){base=[S[0].id];order=[S[0].id];pos=0}
- if(!cur())pos=0;
+ S=(rows||[]).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)).map((raw,i)=>{
+  const s={...raw};
+  return {...s,i,t:s.title||s.t||'',adTs:s.addedAt||s.adTs||null,p:Number(s.p)||0,g:Array.isArray(s.g)?s.g.map(Number).filter(Number.isInteger):[],artistNames:Array.isArray(s.artistNames)?s.artistNames.map(escText).filter(Boolean):[],pd:s.pdTs?new Date(s.pdTs):null,d:Number(s.duration||s.d)||0,url:oldById.get(s.id)?.url||URL.createObjectURL(s.blob),coverUrl:oldById.get(s.id)?.coverUrl||(s.coverBlob?URL.createObjectURL(s.coverBlob):''),h:Number.isFinite(s.h)?s.h:hashHue(s.title||s.t||'')};
+ });
+ normalizeMetaStateAgainstTracks();rebuildDerivedStats();
+ base=base.filter(id=>S.some(s=>s.id===id));order=order.filter(id=>S.some(s=>s.id===id));
+ if(!S.length){if(media.src){media.pause();media.removeAttribute('src');media.load()}mediaTrackId=null;base=[];order=[];pos=0;playing=false;t=0}else if(!order.length){base=[S[0].id];order=[S[0].id];pos=0}
  if(cur()&&mediaTrackId===cur().id&&media.src!==cur().url){media.src=cur().url;media.load()}
- $('#libCount').textContent=`${S.length.toLocaleString()}曲`;renderMetaLists();home();kpis('30日');line('30日');statp('曲');upd();updateStorageStats();requestAnimationFrame(vs);
+ $('#libCount').textContent=`${S.length.toLocaleString()}曲`;
+ renderMetaLists();home();kpis('30日');line('30日');statp('曲');upd();updateStorageStats();applyLibraryView?.();requestAnimationFrame(vs)
 }
 async function loadStoredTracks(){try{const rows=await dbAll();hydrateTracks(rows)}catch(e){toast('保存済みの曲を読み込めませんでした')}}
 async function removeStored(ids){
- const list=ids.map(i=>S[i]).filter(Boolean);if(!list.length)return;
- if(mediaTrackId&&list.some(s=>s.id===mediaTrackId)){media.pause();media.removeAttribute('src');media.load();mediaTrackId=null;playing=false;t=0}
+ const idSet=new Set((ids||[]).map(String));
+ const list=S.filter(s=>idSet.has(s.id));if(!list.length)return;
+ if(mediaTrackId&&list.some(s=>s.id===mediaTrackId)){media.pause();media.removeAttribute('src');media.load();mediaTrackId=null;playing=false;t=0;flushHistorySession()}
  await Promise.all(list.map(s=>dbDelete(s.id)));
- const gone=new Set(list.map(s=>s.id));hydrateTracks(S.filter(s=>!gone.has(s.id)).map(s=>({...s,pdTs:s.pd?.getTime?.()||s.pdTs,pd:undefined,url:undefined,coverUrl:undefined})));
+ const gone=new Set(list.map(s=>s.id));
+ appState.playlists=appState.playlists.map(p=>({...p,ids:p.ids.filter(id=>!gone.has(String(id)))}));
+ base=base.filter(id=>!gone.has(String(id)));order=order.filter(id=>!gone.has(String(id)));
+ hydrateTracks(S.filter(s=>!gone.has(s.id)).map(s=>({...storedTrack(s),pdTs:s.pd?.getTime?.()||s.pdTs})));
+ await dbStatePut(appState);sel.clear();bulk();
 }
 async function computeDuplicateSet(){const rows=await dbAll();return new Set(rows.map(s=>s.fp).filter(Boolean))}
 function renderMetaLists(){
- $('#pgl').innerHTML=PL.length?PL.map((p,k)=>`<div class="card pc" data-p="${k}">${mos(p)}<div><b>${esc(p.n)}</b><p>${p.ids.length}曲</p><p>${esc(p.d||'')}</p></div></div>`).join(''):'';
- $('#ftg').innerHTML=TAGS.map(t1=>`<button class="tg pk" style="--c:${esc(t1.c)};--f:${fg(t1.c)}">${esc(t1.n)}</button>`).join('');
- $('#fa2').innerHTML='<option>すべて</option>'+A.map(a=>`<option>${esc(a)}</option>`).join('');
- $('#fpl').innerHTML='<option>すべて</option>'+PL.map(p=>`<option>${esc(p.n)}</option>`).join('');
- $('#tagl').innerHTML=TAGS.map(t1=>`<div class="trk tr" data-t="${t1.i}"><button class="grip" aria-label="並べ替え">${I('grip')}</button><input type="color" class="cp" value="${esc(t1.c)}" aria-label="色"><div class="tn"><b>${esc(t1.n)}</b><p class="mu sm">0曲・優先度 ${t1.i+1}</p></div><span class="pv vh">${chip(t1)}</span><button class="ib" data-a="tm" aria-label="メニュー">${I('more')}</button></div>`).join('');
- $('#agl').innerHTML=A.map(n=>`<div class="card ac2">${av(n,hashHue(n),56)}<div><b>${esc(n)}</b><p class="mu sm">${S.filter(s=>(s.artistNames||[]).includes(n)).length}曲</p></div><button class="ib" data-a="am" aria-label="編集">${I('edit')}</button></div>`).join('');
+ $('#pgl').innerHTML=PL.length?PL.map((p,k)=>`<div class="card pc" data-p="${k}">${mos(p)}<div><b>${esc(p.n)}</b><p>${p.ids.length}曲</p><p>${esc(p.d||'')}</p></div></div>`).join(''):'<p class="mu" style="padding:8px">プレイリストがまだありません。</p>';
+ $('#ftg').innerHTML=TAGS.map(t1=>`<button class="tg pk${filterTags.has(t1.i)?' on':''}" data-filter-tag="${t1.i}" style="--c:${esc(t1.c)};--f:${fg(t1.c)}">${esc(t1.n)}</button>`).join('')||'<span class="mu sm">タグがまだありません。</span>';
+ $('#fa2').innerHTML='<option value="">すべて</option>'+A.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+ $('#fpl').innerHTML='<option value="">すべて</option>'+PL.map((p,i)=>`<option value="${esc(p.id)}">${esc(p.n)}</option>`).join('');
+ $('#tagl').innerHTML=TAGS.map(t1=>`<div class="trk tr" data-t="${t1.i}"><button class="grip" aria-label="並べ替え">${I('grip')}</button><input type="color" class="cp" value="${esc(t1.c)}" aria-label="色"><div class="tn"><b>${esc(t1.n)}</b><p class="mu sm">${S.filter(s=>(s.g||[]).includes(t1.i)).length}曲・優先度 ${t1.i+1}</p></div><span class="pv vh">${chip(t1)}</span><button class="ib" data-a="tm" aria-label="メニュー">${I('more')}</button></div>`).join('')||'<p class="mu" style="padding:8px">タグがまだありません。</p>';
+ $('#agl').innerHTML=A.map(n=>`<div class="card ac2" data-artist="${esc(n)}">${av(n,hashHue(n),56)}<div><b>${esc(n)}</b><p class="mu sm">${S.filter(s=>(s.artistNames||[]).includes(n)).length}曲</p></div><button class="ib" data-a="am" aria-label="編集">${I('edit')}</button></div>`).join('')||'<p class="mu" style="padding:8px">アーティストがまだありません。</p>';
+ applyLibraryView?.();
 }
 const usageStats=()=>{const audio=S.reduce((n,s)=>n+(Number(s.size)||0),0),covers=S.reduce((n,s)=>n+(Number(s.coverBlob?.size)||0),0),meta=S.reduce((n,s)=>n+new TextEncoder().encode(JSON.stringify({title:s.title,artistNames:s.artistNames,album:s.album,genre:s.genre,pdTs:s.pdTs})).byteLength,0);return {audio,covers,meta,cache:0}};
 const bytesText=n=>{const u=['B','KB','MB','GB'];let x=Math.max(0,Number(n)||0),i=0;while(x>=1024&&i<u.length-1){x/=1024;i++}return `${i?x.toFixed(x>=100?0:x>=10?1:2):Math.round(x)} ${u[i]}`};
@@ -658,69 +696,107 @@ function home(){
 }
 
 /* ---- ライブラリ（実データの仮想スクロール） ---- */
-let sel=new Set(),N=0,RH=()=>innerWidth<768?76:64;
-const row=i=>{const s=S[i],o=sel.has(i);return `<div class="r${o?' sel':''}" data-i="${i}" data-s="${s.i}"><button class="chk${o?' on':''}" aria-label="選択"></button>${th(s,44)}<div class="ti"><b>${esc(s.t)}</b></div><div class="ar">${esc(an(s))||'—'}</div><div class="tgs">${libTags(s)}</div><div class="c-pd">${fmt(s.pd,s.pdPrecision)}</div><div class="c-ad">${fmt(s.adTs)}</div><div class="c-k">${esc(s.k||'—')}</div><button class="ib mm" aria-label="メニュー">${I('more')}</button></div>`};
-function vs(){const c=$('#vs');if(!c.clientHeight)return;N=S.length;const h=RH(),a=Math.max(0,Math.floor(c.scrollTop/h)-5),b=Math.min(N,Math.ceil((c.scrollTop+c.clientHeight)/h)+5);$('#vsIn').style.height=Math.max(1,N*h)+'px';const r=$('#rows');r.style.transform=`translateY(${a*h}px)`;let o='';for(let i=a;i<b;i++)o+=row(i);r.innerHTML=o}
+let sel=new Set(),N=0,RH=()=>innerWidth<768?76:64,libraryView=[],libSearch='',filterTags=new Set();
+const libraryMatches=s=>{
+ const q=libSearch.trim().toLocaleLowerCase('ja');
+ if(q){const tagText=(s.g||[]).map(i=>TAGS[i]?.n||'').join(' ');const hay=[s.t,an(s),s.album,s.genre,tagText,fmt(s.pd),fmt(s.adTs)].join(' ').toLocaleLowerCase('ja');if(!hay.includes(q))return false}
+ const artist=$('#fa2')?.value||'';if(artist&&!(s.artistNames||[]).includes(artist))return false;
+ const pl=$('#fpl')?.value||'';if(pl&&!PL.some(p=>p.id===pl&&(p.ids||[]).includes(s.id)))return false;
+ if(filterTags.size&&!([...filterTags].every(t=>(s.g||[]).includes(t))))return false;
+ const dates=[...$$('#flt input[type=date]')].map(x=>x.value);const d=s.pd?iso(s.pd):'';if(dates[0]&&(!d||d<dates[0]))return false;if(dates[1]&&(!d||d>dates[1]))return false;
+ return true;
+};
+const compareLibrary=(a,b)=>{let av,bv;if(lsk==='t'){av=a.t.localeCompare(b.t,'ja');bv=0;return av*lsd}if(lsk==='pd'){av=a.pd?.getTime?.()||0;bv=b.pd?.getTime?.()||0}else{av=Number(a.adTs)||0;bv=Number(b.adTs)||0}if(av===bv)return (a.t||'').localeCompare(b.t||'','ja');return (av-bv)*lsd};
+function applyLibraryView(){const order=S.map((_,i)=>i).filter(i=>libraryMatches(S[i]));order.sort((ia,ib)=>compareLibrary(S[ia],S[ib]));libraryView=order;N=libraryView.length;const kept=new Set(libraryView);sel=new Set([...sel].filter(i=>kept.has(i)));$('#libCount').textContent=`${S.length.toLocaleString()}曲`;$('#lst').textContent=sortLabel(LS,lsk);$('#lsd').innerHTML=I('down')+`<span>${sortDirLabel(lsd)}</span>`;$('#lsd').classList.toggle('asc',lsd>0);$('#lsd').title=sortDirLabel(lsd);requestAnimationFrame(vs)}
+const row=i=>{const si=libraryView[i],s=S[si],o=sel.has(si);if(!s)return '';return `<div class="r${o?' sel':''}" data-i="${si}" data-s="${s.i}"><button class="chk${o?' on':''}" aria-label="選択"></button>${th(s,44)}<div class="ti"><b>${esc(s.t)}</b></div><div class="ar">${esc(an(s))||'—'}</div><div class="tgs">${libTags(s)}</div><div class="c-pd">${fmt(s.pd,s.pdPrecision)}</div><div class="c-ad">${fmt(s.adTs)}</div><div class="c-k">${esc(s.k||'—')}</div><button class="ib mm" aria-label="メニュー">${I('more')}</button></div>`};
+function vs(){const c=$('#vs');if(!c.clientHeight)return;N=libraryView.length;const h=RH(),a=Math.max(0,Math.floor(c.scrollTop/h)-5),b=Math.min(N,Math.ceil((c.scrollTop+c.clientHeight)/h)+5);$('#vsIn').style.height=Math.max(1,N*h)+'px';const r=$('#rows');r.style.transform=`translateY(${a*h}px)`;let o='';for(let i=a;i<b;i++)o+=row(i);r.innerHTML=o}
 function bulk(){const n=sel.size;$('#bk').classList.toggle('on',n>0);$('#bn').textContent=n.toLocaleString();$('#v-library').classList.toggle('sel',n>0);if(n<N)$('#all').classList.remove('on');requestAnimationFrame(vs)}
 
-/* ---- 編集・削除 ---- */
+/* ---- 編集・タグ・アーティスト・プレイリスト ---- */
 const X=(c='ib')=>`<button class="${c}" data-close aria-label="閉じる">${I('x')}</button>`;
+const newId=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
 function edit(i){
  const s=S[i];if(!s)return;
  openM(`<div class="mh"><h2 class="mt">曲を編集</h2>${X()}</div><div class="ef"><div class="ea">${th(s,240,'fl')}<p class="sm" style="color:var(--ok);font-weight:600">ファイルから自動取得</p></div>
- <div class="fm"><label>タイトル<input value="${esc(s.t)}" readonly></label><div class="fg">アーティスト<div class="fx">${(s.artistNames||[]).map(a=>`<span class="tg ar">${esc(a)}</span>`).join('')||'<span class="mu sm">アーティスト情報なし</span>'}</div></div>
- <div class="fg">タグ<div class="tgs">${TAGS.length?TAGS.map(t=>`<button class="tg pk${s.g.includes(t.i)?' on':''}" style="--c:${esc(t.c)};--f:${fg(t.c)}">${esc(t.n)}</button>`).join(''):'<span class="mu sm">まだタグはありません</span>'}</div></div>
- <div class="two"><label>投稿日<input type="date" value="${iso(s.pd)}" readonly></label><label>キー<select disabled>${KEYS.map(k=>`<option${k===s.k?' selected':''}>${k}</option>`).join('')}</select></label></div></div></div>
- <div class="ft"><button class="btn" data-close>閉じる</button></div>`)
+ <div class="fm"><label>タイトル<input id="editTitle" value="${esc(s.t)}"></label><label>アーティスト<input id="editArtists" value="${esc((s.artistNames||[]).join(' / '))}" placeholder="アーティストを / で区切って入力"></label>
+ <div class="fg">タグ<div class="tgs">${TAGS.length?TAGS.map(t=>`<button type="button" class="tg pk${s.g.includes(t.i)?' on':''}" data-edit-tag="${t.i}" style="--c:${esc(t.c)};--f:${fg(t.c)}">${esc(t.n)}</button>`).join(''):'<span class="mu sm">まだタグはありません</span>'}</div></div>
+ <div class="two"><label>投稿日<input id="editDate" type="date" value="${iso(s.pd)}"></label><label>キー<select id="editKey">${KEYS.map(k=>`<option${k===s.k?' selected':''}>${k}</option>`).join('')}</select></label></div></div></div>
+ <div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok" data-save-kind="track" data-save-id="${esc(s.id)}">保存</button></div>`)
 }
-function del(ids){window._deleteTargets=[...ids];const one=ids.length===1,pls=PL.filter(p=>p.ids.some(x=>ids.includes(x)));
- openM(`<h2 class="mt">${one?'曲を削除しますか？':ids.length+'曲を削除しますか？'}</h2>${one?`<p class="dn2">「${S[ids[0]].t}」</p>`:''}<p class="cfb">${one?'この曲は':'これらの曲は'}以下のプレイリストからも自動的に削除されます。</p><div class="tgs" style="margin:12px 0">${pls.map(p=>`<span class="tg pl">${p.n}</span>`).join('')}</div><p class="mu sm">音声データ・サムネイル・キャッシュ・メタデータも端末から完全に削除されます。</p><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn dg" data-a="dok">完全に削除</button></div>`)}
-const cf=(t,b,ok,d)=>openM(`<h2 class="mt">${t}</h2><div class="cfb">${b}</div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn ${d?'dg':'pri'}" data-a="mok">${ok}</button></div>`);
-const fm=(t,f,ok='保存')=>openM(`<div class="mh"><h2 class="mt">${t}</h2>${X()}</div><div class="fm">${f.map(([l,h])=>`<label>${l}${h}</label>`).join('')}</div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok">${ok}</button></div>`);
+function del(indices){
+ const targetIds=[...new Set((indices||[]).map(i=>S[i]?.id).filter(Boolean))];if(!targetIds.length)return;
+ window._deleteTargets=targetIds;const one=targetIds.length===1,pls=PL.filter(p=>(p.ids||[]).some(x=>targetIds.includes(String(x))));const oneTrack=one?trackById(targetIds[0]):null;
+ openM(`<h2 class="mt">${one?'曲を削除しますか？':targetIds.length+'曲を削除しますか？'}</h2>${oneTrack?`<p class="dn2">「${esc(oneTrack.t)}」</p>`:''}<p class="cfb">${one?'この曲は':'これらの曲は'}以下のプレイリストからも自動的に削除されます。</p><div class="tgs" style="margin:12px 0">${pls.map(p=>`<span class="tg pl">${esc(p.n)}</span>`).join('')}</div><p class="mu sm">音声データ・サムネイル・キャッシュ・メタデータも端末から完全に削除されます。</p><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn dg" data-a="dok">完全に削除</button></div>`)
+}
+function openTagEditor(index=-1){const t=index>=0?TAGS[index]:null;openM(`<div class="mh"><h2 class="mt">${t?'タグを編集':'タグを追加'}</h2>${X()}</div><div class="fm"><label>タグ名<input id="tagName" value="${esc(t?.n||'')}" placeholder="例：作業用"></label><label>色<input id="tagColor" type="color" value="${esc(t?.c||'#6366F1')}"></label></div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok" data-save-kind="tag" data-save-index="${index}">${t?'保存':'追加'}</button></div>`)}
+function openArtistEditor(name=''){const exists=!!name;openM(`<div class="mh"><h2 class="mt">${exists?'アーティストを編集':'アーティストを追加'}</h2>${X()}</div><div class="fm"><label>アーティスト名<input id="artistName" value="${esc(name)}" placeholder="例：アーティスト名"></label></div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok" data-save-kind="artist" data-save-name="${esc(name)}">${exists?'保存':'追加'}</button></div>`)}
+function openPlaylistEditor(index=-1){const p=index>=0?PL[index]:null;openM(`<div class="mh"><h2 class="mt">${p?'プレイリストを編集':'プレイリストを作成'}</h2>${X()}</div><div class="fm"><label>名前<input id="plName" value="${esc(p?.n||'')}" placeholder="例：通勤用"></label><label>説明<input id="plDesc" value="${esc(p?.d||'')}" placeholder="説明"></label></div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok" data-save-kind="playlist" data-save-index="${index}">${p?'保存':'作成'}</button></div>`)}
+function openAddToPlaylist(trackIds,currentPlaylistId=''){
+ const valid=[...new Set(trackIds.map(String))].filter(id=>trackById(id));if(!valid.length){toast('追加する曲を選択してください');return}
+ openM(`<div class="mh"><h2 class="mt">プレイリストに追加</h2>${X()}</div><div class="fm"><label>プレイリスト<select id="targetPlaylist">${PL.map(p=>`<option value="${esc(p.id)}"${p.id===currentPlaylistId?' selected':''}>${esc(p.n)}</option>`).join('')}</select></label></div>${PL.length?'':'<p class="mu sm">プレイリストがまだありません。先に作成してください。</p>'}<div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok" data-save-kind="addToPlaylist" data-track-ids="${esc(valid.join('|'))}">追加</button></div>`)
+}
+function openPlaylistTrackPicker(index){
+ const p=PL[index],existing=new Set((p?.ids||[]).map(String));if(!p)return;const opts=S.filter(s=>!existing.has(s.id)).map(s=>`<option value="${esc(s.id)}">${esc(s.t)}${an(s)?' — '+esc(an(s)):''}</option>`).join('');
+ openM(`<div class="mh"><h2 class="mt">曲を追加</h2>${X()}</div><div class="fm"><label>ライブラリから選択<select id="playlistTrackPicker" multiple size="8">${opts||'<option disabled>追加できる曲がありません</option>'}</select></label><p class="mu sm">Ctrl / ⌘を押しながら複数の曲を選択できます。</p></div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok" data-save-kind="playlistTracks" data-save-index="${index}">追加</button></div>`)
+}
+function syncTagIndices(){TAGS.forEach((t,i)=>{t.i=i});appState.tags=TAGS.map(t=>({i:t.i,n:t.n,c:t.c}));for(const s of S)s.g=[...new Set((s.g||[]).map(Number).filter(i=>Number.isInteger(i)&&i>=0&&i<TAGS.length))];}
+async function saveModal(){const save=$('#ms [data-save-kind]');if(!save){closeM();return}const kind=save.dataset.saveKind;
+ if(kind==='track'){const s=trackById(save.dataset.saveId);if(!s)return;const title=escText($('#editTitle')?.value);if(!title){toast('タイトルを入力してください');return}const names=[...new Set(($('#editArtists')?.value||'').split(/[\/、,\n]+/).map(escText).filter(Boolean))];s.t=title;s.title=title;s.artistNames=names;s.k=$('#editKey')?.value||'';const ds=$('#editDate')?.value||'';s.pdTs=ds?new Date(ds+'T00:00:00').getTime():null;s.pd=s.pdTs?new Date(s.pdTs):null;s.g=$$('[data-edit-tag].on',$('#ms')).map(b=>Number(b.dataset.editTag)).filter(Number.isInteger);appState.artists=[...new Set([...(appState.artists||[]),...names])];await saveTrack(s);normalizeMetaStateAgainstTracks();renderMetaLists();home();statp('曲');kpis('30日');closeM();toast('曲情報を保存しました');return}
+ if(kind==='tag'){const name=escText($('#tagName')?.value),color=$('#tagColor')?.value||'#6366F1';if(!name){toast('タグ名を入力してください');return}const idx=Number(save.dataset.saveIndex);if(idx>=0&&TAGS[idx]){TAGS[idx].n=name;TAGS[idx].c=color}else if(!TAGS.some(t=>t.n.toLocaleLowerCase('ja')===name.toLocaleLowerCase('ja'))){TAGS.push({i:TAGS.length,n:name,c:color})}else{toast('同名のタグがあります');return}syncTagIndices();await saveAllTrackMetadata();renderMetaLists();closeM();toast(idx>=0?'タグを保存しました':'タグを追加しました');return}
+ if(kind==='artist'){const name=escText($('#artistName')?.value),old=escText(save.dataset.saveName||'');if(!name){toast('アーティスト名を入力してください');return}if(old){for(const s of S)s.artistNames=(s.artistNames||[]).map(a=>a===old?name:a).filter((a,i,arr)=>arr.indexOf(a)===i);appState.artists=(appState.artists||[]).map(a=>a===old?name:a)}else if(!appState.artists.includes(name)&&!S.some(s=>(s.artistNames||[]).includes(name))){appState.artists.push(name)}else{toast('同名のアーティストがあります');return}appState.artists=[...new Set(appState.artists)];await saveAllTrackMetadata();normalizeMetaStateAgainstTracks();renderMetaLists();closeM();toast(old?'アーティストを保存しました':'アーティストを追加しました');return}
+ if(kind==='playlist'){const name=escText($('#plName')?.value),desc=escText($('#plDesc')?.value),idx=Number(save.dataset.saveIndex);if(!name){toast('プレイリスト名を入力してください');return}if(idx>=0&&PL[idx]){PL[idx].n=name;PL[idx].d=desc}else{PL.push({id:newId('pl'),n:name,d:desc,ids:[]})}appState.playlists=PL;scheduleStateSave();renderMetaLists();if(idx===cp)renderPL();closeM();toast(idx>=0?'プレイリストを保存しました':'プレイリストを作成しました');return}
+ if(kind==='addToPlaylist'){const target=$('#targetPlaylist')?.value,pl=PL.find(p=>p.id===target),ids=(save.dataset.trackIds||'').split('|').filter(Boolean);if(!pl){toast('プレイリストを選択してください');return}pl.ids=[...new Set([...pl.ids,...ids])];appState.playlists=PL;scheduleStateSave();renderMetaLists();if($('#pd').classList.contains('hid')===false&&PL[cp]?.id===pl.id)renderPL();sel.clear();bulk();closeM();toast(`${ids.length}曲をプレイリストに追加しました`);return}
+ if(kind==='playlistTracks'){const idx=Number(save.dataset.saveIndex),pl=PL[idx];const selected=$$('#playlistTrackPicker option:checked').map(o=>o.value);if(!pl||!selected.length){toast('追加する曲を選択してください');return}pl.ids=[...new Set([...pl.ids,...selected])];appState.playlists=PL;scheduleStateSave();renderMetaLists();if(idx===cp)renderPL();closeM();toast(`${selected.length}曲を追加しました`);return}
+}
+const cf=(t,b,ok,d,action)=>openM(`<h2 class="mt">${t}</h2><div class="cfb">${b}</div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn ${d?'dg':'pri'}" data-a="confirm" data-confirm="${esc(action||'close')}">${ok}</button></div>`);
+async function confirmAction(action){
+ if(action==='deleteTag'){const idx=Number(window._deleteTagIndex);if(!TAGS[idx])return;TAGS.splice(idx,1);const map=new Map();S.forEach(s=>{s.g=(s.g||[]).filter(x=>x!==idx).map(x=>x>idx?x-1:x)});syncTagIndices();await saveAllTrackMetadata();renderMetaLists();closeM();toast('タグを削除しました');return}
+ if(action==='deleteArtist'){const name=String(window._deleteArtist||'');for(const s of S)s.artistNames=(s.artistNames||[]).filter(a=>a!==name);appState.artists=(appState.artists||[]).filter(a=>a!==name);await saveAllTrackMetadata();normalizeMetaStateAgainstTracks();renderMetaLists();closeM();toast('アーティストを削除しました');return}
+ if(action==='deletePlaylist'){const id=String(window._deletePlaylist||'');const was=PL[cp]?.id===id;PL=PL.filter(p=>p.id!==id);appState.playlists=PL;scheduleStateSave();renderMetaLists();if(was)closePL();closeM();toast('プレイリストを削除しました');return}
+ if(action==='clearCache'){for(const s of S){if(s.url)URL.revokeObjectURL(s.url);if(s.coverUrl)URL.revokeObjectURL(s.coverUrl);s.url=URL.createObjectURL(s.blob);s.coverUrl=s.coverBlob?URL.createObjectURL(s.coverBlob):''}updateMediaSourceAfterCacheClear?.();updateStorageStats();closeM();toast('キャッシュを削除しました');return}
+ if(action==='clearAll'){if(media.src){media.pause();media.removeAttribute('src');media.load()}mediaTrackId=null;playing=false;flushHistorySession();await dbClear();appState=appStateDefault();await dbStatePut(appState);try{localStorage.removeItem(localStateKey)}catch{};S=[];A=[];TAGS=[];PL=[];ANN=[];TOP=[];AR=[];TG=[];base=[];order=[];pos=0;t=0;sel.clear();renderMetaLists();home();kpis('30日');line('30日');statp('曲');upd();updateStorageStats();bulk();closeM();toast('すべてのローカルデータを削除しました');return}
+}
 /* ---- プレイリスト ---- */
 const SO=[['手動順','m'],['追加日','ad'],['タイトル','t'],['投稿日','pd']],LS=[['追加日','ad'],['タイトル','t'],['投稿日','pd']];
 let cp=0,sk='m',sd=1,plL=[],lsk='ad',lsd=-1;
 const sortLabel=(list,key)=>{const o=list.find(x=>x[1]===key);return o?o[0]:'手動順'};const sortDirLabel=dir=>dir<0?'降順':'昇順';
-const mos=(p,c='')=>`<div class="mos ${c}">${p.ids.slice(0,4).map(i=>`<div style="background:${g(S[i].h)}"></div>`).join('')}</div>`;
+const mos=(p,c='')=>`<div class="mos ${c}">${(p?.ids||[]).slice(0,4).map(id=>trackById(id)).filter(Boolean).map(s=>`<div style="${bgStyle(s)}"></div>`).join('')}</div>`;
 function closePL(){$('#pl0').classList.remove('hid');$('#pd').classList.add('hid');addl()}
-function openPL(k){cp=k;sk='m';sd=1;$('#pl0').classList.add('hid');$('#pd').classList.remove('hid');renderPL();$('#sc').scrollTop=0;addl()}
-function renderPL(){const p=PL[cp];plL=p.ids.map(i=>S[i]);if(sk!=='m')plL.sort((a,b)=>(sk==='t'?a.t.localeCompare(b.t,'ja'):a[sk]-b[sk])*sd);
- $('#pdh').innerHTML=`${mos(p,'lg')}<div><span class="bd l">プレイリスト</span><h2>${p.n}</h2><p class="mu">${p.d}</p><p class="mu">${plL.length}曲 ・ ${Math.round(plL.reduce((x,s)=>x+s.d,0)/60)}分</p><div class="acts"><button class="btn pri" data-a="plp">${I('play','f')}再生</button><button class="ib" data-a="sh" aria-label="ランダム再生">${I('shuffle')}</button><button class="ib" data-a="lp" aria-label="ループ">${I('repeat')}</button><button class="ib" data-a="plm" aria-label="その他">${I('more')}</button></div></div>`;
+function openPL(k){if(!PL[k])return;cp=k;sk='m';sd=1;$('#pl0').classList.add('hid');$('#pd').classList.remove('hid');renderPL();$('#sc').scrollTop=0;addl()}
+function renderPL(){const p=PL[cp];if(!p){closePL();return}plL=(p.ids||[]).map(trackById).filter(Boolean);if(sk!=='m')plL.sort((a,b)=>(sk==='t'?a.t.localeCompare(b.t,'ja'):(sk==='ad'?(a.adTs||0)-(b.adTs||0):(a.pd?.getTime?.()||0)-(b.pd?.getTime?.()||0)))*sd);
+ $('#pdh').innerHTML=`${mos(p,'lg')}<div><span class="bd l">プレイリスト</span><h2>${esc(p.n)}</h2><p class="mu">${esc(p.d||'')}</p><p class="mu">${plL.length}曲 ・ ${Math.round(plL.reduce((x,s)=>x+(s.d||0),0)/60)}分</p><div class="acts"><button class="btn pri" data-a="plp"${plL.length?'':' disabled'}>${I('play','f')}再生</button><button class="ib" data-a="sh" aria-label="ランダム再生">${I('shuffle')}</button><button class="ib" data-a="lp" aria-label="ループ">${I('repeat')}</button><button class="ib" data-a="plm" aria-label="その他">${I('more')}</button></div></div>`;
  $('#psb').innerHTML=`${I('sort')}<span>${sortLabel(SO,sk)}</span>`;
  $('#psd').innerHTML=`${I('down')}<span>${sortDirLabel(sd)}</span>`;$('#psd').classList.toggle('asc',sd>0);$('#psd').title=sortDirLabel(sd);$('#psd').disabled=sk==='m';$('#psd').style.opacity=sk==='m'?.5:1;$('#psd').style.pointerEvents=sk==='m'?'none':'auto';
- const l=$('#pll');l.dataset.m=sk==='m'?1:0;l.innerHTML=plL.map(s=>`<div class="trk" data-s="${s.i}"><button class="grip" aria-label="並べ替え">${I('grip')}</button>${th(s,48)}<div class="m"><b>${s.t}</b><p class="mu sm">${an(s)}</p></div><div class="tgs vh">${tags(s)}</div><span class="mu">${mm(s.d)}</span><button class="ib mm" aria-label="メニュー">${I('more')}</button></div>`).join('');upd()}
+ const l=$('#pll');l.dataset.m=sk==='m'?1:0;l.innerHTML=plL.map(s=>`<div class="trk" data-s="${esc(s.id)}"><button class="grip" aria-label="並べ替え">${I('grip')}</button>${th(s,48)}<div class="m"><b>${esc(s.t)}</b><p class="mu sm">${esc(an(s))}</p></div><div class="tgs vh">${tags(s)}</div><span class="mu">${mm(s.d)}</span><button class="ib mm" aria-label="メニュー">${I('more')}</button></div>`).join('')||'<p class="mu" style="padding:14px">このプレイリストには曲がありません。</p>';upd()}
+function persistPlaylistOrder(){const p=PL[cp];if(!p)return;const ids=$$('#pll .trk').map(el=>el.dataset.s).filter(Boolean);if(ids.length||!plL.length){p.ids=ids;appState.playlists=PL;scheduleStateSave();renderMetaLists();toast('並び順を保存しました')}}
+function persistTagOrder(){const order=$$('#tagl .tr').map(el=>Number(el.dataset.t)).filter(Number.isInteger);if(order.length!==TAGS.length)return;const old=TAGS.slice(),map=new Map(order.map((oldIdx,newIdx)=>[oldIdx,newIdx]));TAGS=order.map((oldIdx,newIdx)=>({...old[oldIdx],i:newIdx}));for(const s of S)s.g=[...new Set((s.g||[]).map(x=>map.get(x)).filter(Number.isInteger))];syncTagIndices();saveAllTrackMetadata();renderMetaLists();toast('タグの表示順を保存しました')}
 function dnd(l){l.addEventListener('pointerdown',e=>{const gp=e.target.closest('.grip');if(!gp||l.dataset.m==='0')return;e.preventDefault();const it=gp.closest('.trk');let y0=e.clientY;it.classList.add('drag');
- const mv=ev=>{const put=()=>it.style.transform=`translateY(${ev.clientY-y0}px) scale(1.02)`,sw=(o,af)=>{const t0=it.getBoundingClientRect().top;af?o.after(it):o.before(it);y0+=it.getBoundingClientRect().top-t0;put()};put();
-  const r=it.getBoundingClientRect(),c=r.top+r.height/2,n=it.nextElementSibling,p=it.previousElementSibling;
-  if(n&&c>n.getBoundingClientRect().top+n.offsetHeight/2)sw(n,1);else if(p&&c<p.getBoundingClientRect().top+p.offsetHeight/2)sw(p,0)};
- const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);it.classList.remove('drag');it.style.transform='';toast('並び順を更新しました（仮）')};
+ const mv=ev=>{const put=()=>it.style.transform=`translateY(${ev.clientY-y0}px) scale(1.02)`,sw=(o,af)=>{const t0=it.getBoundingClientRect().top;af?o.after(it):o.before(it);y0+=it.getBoundingClientRect().top-t0;put()};put();const r=it.getBoundingClientRect(),c=r.top+r.height/2,n=it.nextElementSibling,p=it.previousElementSibling;if(n&&c>n.getBoundingClientRect().top+n.offsetHeight/2)sw(n,1);else if(p&&c<p.getBoundingClientRect().top+p.offsetHeight/2)sw(p,0)};
+ const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);it.classList.remove('drag');it.style.transform='';if(l.id==='tagl')persistTagOrder();else if(l.id==='pll')persistPlaylistOrder()};
  document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)})}
 /* ---- 統計 ---- */
-const KP={};
-function kpis(p){const k=[0,0,0,0];$('#kp').innerHTML=[['総再生時間',`${Math.floor(k[0]/60)}<small>時間</small>${k[0]%60}<small>分</small>`],['再生回数',`${k[1].toLocaleString()}<small>回</small>`],['ユニーク曲',`${k[2].toLocaleString()}<small>曲</small>`],['ユニークアーティスト',`${k[3]}<small>人</small>`]].map(([l,v])=>`<div class="card kpi"><span>${l}</span><b>${v}</b></div>`).join('')}
-function line(period='30日'){const W=600,H=180,conf={'今日':[24,'1時','6時','12時','18時','24時'],'7日':[7,'6日前','3日前','今日'],'30日':[30,'30日前','15日前','今日'],'3ヶ月':[12,'3ヶ月前','6週間前','今日'],'1年':[12,'12ヶ月前','6ヶ月前','今日'],'全期間':[12,'全期間','6ヶ月前','今日']};let cfg=conf[period]||conf['30日'];if(period==='カスタム'){const ds=[...$$('#cust input[type=date]')].map(x=>x.value).filter(Boolean);if(ds.length===2){const a0=new Date(ds[0]),b0=new Date(ds[1]);const days=Math.max(1,Math.floor((b0-a0)/864e5)+1);cfg=[Math.min(30,days),days+'日前',Math.round(days/2)+'日前','終了日']}}const [n,a,b,c]=cfg,bw=Math.max(4,W/n*.62),v=i=>8;
- $('#lc').innerHTML=`${[30,70,110,150].map(y=>`<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="#E2E5EA" vector-effect="non-scaling-stroke"/>`).join('')}${[...Array(n)].map((_,i)=>{const x=i*W/n+(W/n-bw)/2,h=Math.max(8,(v(i)-25)*1.1),y=H-h-8;return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#6366F1" opacity="${(.34+.66*(h/(H-8))).toFixed(2)}"/>`}).join('')}`;const ax=$$('.ax');if(ax[0])ax[0].innerHTML=`<span>${a}</span><span>${b}</span><span>${c}</span>`}
-function statp(v){
- const hasPlayed=TOP.length>0;
- const bars=r=>{const m=Math.max(1,...r.map(x=>x[1]));return r.map(([n,val,c])=>`<div class="bar"><span>${n}</span><div class="bt"><i style="width:${val/m*100}%;${c?'background:'+c:''}"></i></div><b>${val}</b></div>`).join('')};
- const H=hasPlayed?{
-  '曲':`<div class="g3">${TOP.slice(0,6).map((s,k)=>`<div class="card sc"><span class="rk">${k+1}</span>${th(s,64)}<div><b>${esc(s.t)}</b><p class="mu sm">${esc(an(s))}</p><p class="pc2">${s.p}回再生</p></div></div>`).join('')}</div>`,
-  'アーティスト':`<div class="card pn2">${bars(AR.map(a=>[esc(a.n),a.v]))}</div>`,
-  'タグ':`<div class="card pn2"><p class="mu sm">タグの再生統計はまだありません。</p></div>`
- }[v]:`<div class="card pn2"><p class="mu sm">再生履歴がありません。</p></div>`;
- $('#sp').innerHTML=H||`<div class="card pn2"><p class="mu sm">再生履歴がありません。</p></div>`
+function periodRange(period){const end=new Date();end.setHours(23,59,59,999);if(period==='今日'){const a=new Date(end);a.setHours(0,0,0,0);return [a,end]}const days={"7日":7,"30日":30,"3ヶ月":90,"1年":365,"全期間":null};if(days[period]==null){if(period==='カスタム'){const ds=[...$$('#cust input[type=date]')].map(x=>x.value);if(ds.length===2&&ds[0]&&ds[1])return [new Date(ds[0]+'T00:00:00'),new Date(ds[1]+'T23:59:59')]}return [new Date(0),end]}const a=new Date(end);a.setDate(a.getDate()-days[period]+1);a.setHours(0,0,0,0);return [a,end]}
+const historyIn=(period='30日')=>{const [a,b]=periodRange(period);return appState.history.filter(h=>h.startedAt>=a.getTime()&&h.startedAt<=b.getTime())};
+function aggregatePlays(period='30日'){const h=historyIn(period),tracks=new Map(),artists=new Map(),tags=new Map();for(const e of h){const s=trackById(e.trackId);if(!s)continue;tracks.set(s.id,(tracks.get(s.id)||0)+1);for(const a of s.artistNames||[])artists.set(a,(artists.get(a)||0)+1);for(const g of s.g||[])tags.set(g,(tags.get(g)||0)+1)}return {h,tracks,artists,tags}}
+function kpis(p){const h=historyIn(p),seconds=h.reduce((x,e)=>x+Math.max(0,e.seconds||0),0),uniqueTracks=new Set(h.map(e=>e.trackId).filter(id=>trackById(id))),uniqueArtists=new Set(h.flatMap(e=>trackById(e.trackId)?.artistNames||[]));const vals=[['総再生時間',`${Math.floor(seconds/3600)}<small>時間</small>${Math.floor(seconds/60)%60}<small>分</small>`],['再生回数',`${h.length.toLocaleString()}<small>回</small>`],['ユニーク曲',`${uniqueTracks.size.toLocaleString()}<small>曲</small>`],['ユニークアーティスト',`${uniqueArtists.size}<small>人</small>`]];$('#kp').innerHTML=vals.map(([l,v])=>`<div class="card kpi"><span>${l}</span><b>${v}</b></div>`).join('')}
+function line(period='30日'){
+ const W=600,H=180,[start,end]=periodRange(period),days=period==='今日'?24:Math.min(30,Math.max(1,Math.ceil((end-start)/864e5)+1)),bins=Array.from({length:days},()=>0);
+ for(const e of appState.history){const ts=e.startedAt;if(ts<start.getTime()||ts>end.getTime())continue;let idx;if(period==='今日')idx=Math.min(23,new Date(ts).getHours());else idx=Math.min(days-1,Math.floor((ts-start.getTime())/864e5));bins[idx]+=Math.max(0,e.seconds||0)/60}
+ const max=Math.max(1,...bins),bw=Math.max(4,W/days*.62),bars=bins.map((v,i)=>{const x=i*W/days+(W/days-bw)/2,h=Math.max(2,(v/max)*(H-20)),y=H-h-8;return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#6366F1" opacity="${(.34+.66*(h/(H-8))).toFixed(2)}"/>`}).join('');$('#lc').innerHTML=`${[30,70,110,150].map(y=>`<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="#E2E5EA" vector-effect="non-scaling-stroke"/>`).join('')}${bars}`;const ax=$$('.ax');if(ax[0])ax[0].innerHTML=period==='今日'?'<span>0時</span><span>12時</span><span>24時</span>':`<span>${fmt(start)}</span><span>${fmt(new Date(start.getTime()+(end-start)/2))}</span><span>${fmt(end)}</span>`
+}
+function statp(v,period='30日'){
+ const {tracks,artists,tags}=aggregatePlays(period),trackRows=[...tracks.entries()].sort((a,b)=>b[1]-a[1]).map(([id,count])=>[trackById(id),count]).filter(x=>x[0]),artistRows=[...artists.entries()].sort((a,b)=>b[1]-a[1]),tagRows=[...tags.entries()].sort((a,b)=>b[1]-a[1]),bars=r=>{const m=Math.max(1,...r.map(x=>x[1]));return r.map(([n,val,c])=>`<div class="bar"><span>${esc(n)}</span><div class="bt"><i style="width:${val/m*100}%;${c?'background:'+esc(c):''}"></i></div><b>${val}</b></div>`).join('')};
+ let H='';if(v==='曲')H=trackRows.length?`<div class="g3">${trackRows.slice(0,6).map(([s,count],k)=>`<div class="card sc"><span class="rk">${k+1}</span>${th(s,64)}<div><b>${esc(s.t)}</b><p class="mu sm">${esc(an(s))}</p><p class="pc2">${count}回再生</p></div></div>`).join('')}</div>`:'<div class="card pn2"><p class="mu sm">この期間の再生履歴がありません。</p></div>';
+ else if(v==='アーティスト')H=artistRows.length?`<div class="card pn2">${bars(artistRows)}</div>`:'<div class="card pn2"><p class="mu sm">この期間の再生履歴がありません。</p></div>';
+ else {const rows=tagRows.map(([idx,count])=>{const t=TAGS[idx];return t?[t.n,count,t.c]:null}).filter(Boolean);H=rows.length?`<div class="card pn2">${bars(rows)}</div>`:'<div class="card pn2"><p class="mu sm">この期間の再生履歴がありません。</p></div>'}
+ $('#sp').innerHTML=H
 }
 /* ---- 管理・設定 ---- */
-renderMetaLists();
-const sr=(b,d,c)=>`<div class="sr"><div><b>${b}</b>${d?`<p class="mu sm">${d}</p>`:''}</div>${c}</div>`,sw=o=>`<button class="swt${o?' on':''}" role="switch" aria-checked="${!!o}"></button>`,sel1=(o,v)=>`<select>${o.map(x=>`<option${x===v?' selected':''}>${x}</option>`).join('')}</select>`;
-const EQ=['60','250','1k','4k','8k','16k'],PRE=[['フラット',[0,0,0,0,0,0]],['ボーカル',[-2,-1,2,4,2,0]],['低音強調',[6,4,1,0,0,0]]];
-const ST=[['s1','再生',sr('自動再生','追加後や起動時に再生を始めます',sw(0))+sr('再生速度','',sel1(['0.5x','0.75x','1.0x','1.25x','1.5x','2.0x'],'1.0x'))],
-['s2','オーディオ',sr('イコライザ','',sw(1))+`<div class="eqdet on" id="eqdet"><div class="chips">${PRE.map((p,k)=>`<button class="chp${k?'':' on'}" data-a="pre" data-i="${k}">${p[0]}</button>`).join('')}</div><div class="eq" id="eq">${EQ.map(f=>`<label><input type="range" min="-12" max="12" value="0" aria-label="${f}Hz"><span>${f}</span></label>`).join('')}</div></div>`+sr('音量補正','曲ごとの音量差をならします',sw(1))],
-['s3','キャッシュ・データ',`<div class="sr cl"><div id="storageStats"></div></div>`+sr('キャッシュを削除','再生履歴と曲情報は残ります','<button class="btn" data-a="cc">キャッシュを削除</button>')+sr('すべてのローカルデータを削除','曲・プレイリスト・履歴もすべて削除されます','<button class="btn dgo" data-a="ca">すべて削除</button>')],
-['s4','アプリ',[['Space','再生／一時停止'],['←','5秒戻る'],['→','5秒進む'],['N','次へ'],['P','前へ'],['R','ループ'],['S','シャッフル']].map(([k,l])=>sr(l,'',`<kbd>${k}</kbd>`)).join('')]];
-$('#stg').innerHTML=ST.map(([id,t,b])=>`<div class="card sx" id="${id}"><h3>${t}</h3>${b}</div>`).join('');
-$('#sn').innerHTML=ST.map(([id,t])=>`<button data-a="scr" data-t="${id}">${t}</button>`).join('');
-const setEq=k=>{$$('.chp[data-a=pre]').forEach((b,j)=>b.classList.toggle('on',j===k));$$('#eq input').forEach((r,j)=>r.value=PRE[k][1][j])};
+const EQF=['60','250','1k','4k','8k','16k'],PRE=[['フラット',[0,0,0,0,0,0]],['ボーカル',[-2,-1,2,4,2,0]],['低音強調',[6,4,1,0,0,0]]];
+const sr=(b,d,c)=>`<div class="sr"><div><b>${b}</b>${d?`<p class="mu sm">${d}</p>`:''}</div>${c}</div>`;
+const settingSw=(key,on)=>`<button class="swt${on?' on':''}" role="switch" aria-checked="${!!on}" data-setting="${key}"></button>`;
+function renderSettings(){const st=appState.settings;$('#stg').innerHTML=`<div class="card sx" id="s1"><h3>再生</h3>${sr('自動再生','追加後や起動時に再生を始めます',settingSw('autoPlay',st.autoPlay))}${sr('再生速度','',`<select data-setting="speed">${[.5,.75,1,1.25,1.5,2].map(v=>`<option value="${v}"${Number(st.speed)===v?' selected':''}>${v.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}x</option>`).join('')}</select>`)}</div><div class="card sx" id="s2"><h3>オーディオ</h3>${sr('イコライザ','',settingSw('eqEnabled',st.eqEnabled))}<div class="eqdet ${st.eqEnabled?'on':''}" id="eqdet"><div class="chips">${PRE.map((p,k)=>`<button class="chp${Number(st.eqPreset)===k?' on':''}" data-a="pre" data-i="${k}">${p[0]}</button>`).join('')}</div><div class="eq" id="eq">${EQF.map((f,i)=>`<label><input type="range" min="-12" max="12" step="1" value="${Number(st.eqValues?.[i])||0}" data-eq-index="${i}" aria-label="${f}Hz"><span>${f}</span></label>`).join('')}</div></div>${sr('音量補正','簡易ダイナミック補正を適用します',settingSw('normalizeVolume',st.normalizeVolume))}</div><div class="card sx" id="s3"><h3>キャッシュ・データ</h3><div class="sr cl"><div id="storageStats"></div></div>${sr('キャッシュを削除','再生履歴と曲情報は残ります','<button class="btn" data-a="cc">キャッシュを削除</button>')}${sr('すべてのローカルデータを削除','曲・プレイリスト・履歴もすべて削除されます','<button class="btn dgo" data-a="ca">すべて削除</button>')}</div><div class="card sx" id="s4"><h3>アプリ</h3>${[['Space','再生／一時停止'],['←','5秒戻る'],['→','5秒進む'],['N','次へ'],['P','前へ'],['R','ループ'],['S','シャッフル']].map(([k,l])=>sr(l,'',`<kbd>${k}</kbd>`)).join('')}</div>`;$('#sn').innerHTML=[['s1','再生'],['s2','オーディオ'],['s3','キャッシュ・データ'],['s4','アプリ']].map(([id,t])=>`<button data-a="scr" data-t="${id}">${t}</button>`).join('');updateStorageStats()}
+const setEqPreset=k=>{const idx=Math.max(0,Math.min(PRE.length-1,Number(k)||0));appState.settings.eqPreset=idx;appState.settings.eqValues=PRE[idx][1].slice();applyAudioSettings();scheduleStateSave();renderSettings()};
 /* ---- プレイヤー（読み込んだ曲をUIへ接続） ---- */
 const SP=[.5,.75,1,1.25,1.5,2],sl=v=>(Number.isInteger(v)?v.toFixed(1):v)+'x';
 let spi=2,sh=false,lp=false,playing=false,t=0,base=[],order=[],pos=0,playKey=KEYS[0];
@@ -729,6 +805,28 @@ media.preload='auto';
 media.setAttribute('playsinline','');
 media.setAttribute('webkit-playsinline','');
 let mediaTrackId=null,mediaLoadToken=0;
+let audioCtx=null,sourceNode=null,eqNodes=[],normalizeNode=null;
+let historySession=null,historyFlushAt=0;
+function ensureAudioGraph(){
+ if(sourceNode)return true;
+ const C=window.AudioContext||window.webkitAudioContext;if(!C)return false;
+ try{
+  audioCtx=new C();sourceNode=audioCtx.createMediaElementSource(media);
+  eqNodes=EQF.map((f,i)=>{const n=audioCtx.createBiquadFilter();n.frequency.value=Number(f.replace('k','000'));n.type=i===0?'lowshelf':i===EQF.length-1?'highshelf':'peaking';n.Q.value=i===0||i===EQF.length-1?.7:1;n.gain.value=0;return n});
+  normalizeNode=audioCtx.createDynamicsCompressor();
+  normalizeNode.threshold.value=0;normalizeNode.knee.value=0;normalizeNode.ratio.value=1;normalizeNode.attack.value=.003;normalizeNode.release.value=.25;
+  let node=sourceNode;for(const n of eqNodes){node.connect(n);node=n}node.connect(normalizeNode);normalizeNode.connect(audioCtx.destination);applyAudioSettings();return true;
+ }catch(e){audioCtx=null;sourceNode=null;eqNodes=[];normalizeNode=null;try{media.volume=1}catch{}return false}
+}
+function applyAudioSettings(){
+ if(eqNodes.length){eqNodes.forEach((n,i)=>n.gain.value=appState.settings.eqEnabled?Number(appState.settings.eqValues?.[i])||0:0)}
+ if(normalizeNode){if(appState.settings.normalizeVolume){normalizeNode.threshold.value=-24;normalizeNode.knee.value=18;normalizeNode.ratio.value=3.5;normalizeNode.attack.value=.003;normalizeNode.release.value=.25}else{normalizeNode.threshold.value=0;normalizeNode.knee.value=0;normalizeNode.ratio.value=1;normalizeNode.attack.value=.003;normalizeNode.release.value=.25}}
+}
+async function resumeAudioContext(){if(!audioCtx)return;try{if(audioCtx.state==='suspended')await audioCtx.resume()}catch{}}
+function beginHistorySession(s,countPlay=false){if(!s)return;if(historySession&&historySession.trackId===s.id){historyFlushAt=performance.now();return}flushHistorySession(false);const entry={trackId:s.id,startedAt:Date.now(),seconds:0};appState.history.push(entry);if(countPlay)s.p=Number(s.p||0)+1;historySession={trackId:s.id,entry,lastClock:performance.now()};historyFlushAt=historySession.lastClock;rebuildDerivedStats();scheduleStateSave();if(countPlay){saveTrack(s).catch(()=>{});home();kpis('30日');line('30日');statp('曲')}}
+function flushHistorySession(keep=true){if(!historySession)return;const nowp=performance.now();const delta=Math.max(0,(nowp-historySession.lastClock)/1000);if(delta>0)historySession.entry.seconds+=delta*Math.max(.1,media.playbackRate||1);historySession.lastClock=nowp;if(!keep)historySession=null;scheduleStateSave();if(!keep){home();kpis('30日');line('30日');statp('曲')}}
+function updateMediaSourceAfterCacheClear(){const s=cur();if(!s)return;const wasPlaying=!media.paused;if(mediaTrackId===s.id){media.pause();media.removeAttribute('src');media.load();mediaTrackId=null;setMediaSource(s,true);if(wasPlaying)startMedia(s,true,false).catch(()=>{})}}
+
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const trackById=id=>S.find(s=>s.id===id)||null;
 const trackRef=ref=>S[ref]?.id||ref||null;
@@ -743,12 +841,16 @@ const setMediaSource=(s,reset=true)=>{
  if(reset||media.ended){try{media.currentTime=0}catch{}}
  return true;
 };
-const startMedia=async(s,reset=false)=>{
+const startMedia=async(s,reset=false,recordPlay=false)=>{
  if(!setMediaSource(s,reset))return false;
+ ensureAudioGraph();
  const token=mediaLoadToken;
  try{
-  await media.play();
-  if(token!==mediaLoadToken||mediaTrackId!==s.id)return false;
+  const playPromise=media.play();
+  await resumeAudioContext();
+  await playPromise;
+  if(token!==mediaLoadToken||mediaTrackId!==s.id||media.paused)return false;
+  beginHistorySession(s,recordPlay);
   return true;
  }catch(e){
   if(token===mediaLoadToken){playing=false;upd();if(e?.name==='NotAllowedError')toast('ブラウザの設定により再生できません。再生ボタンをもう一度押してください');else toast('この音声を再生できませんでした')}
@@ -757,6 +859,7 @@ const startMedia=async(s,reset=false)=>{
 };
 async function play(id,list){
  if(!S.length)return;
+ flushHistorySession(false);
  const requested=trackRef(id);
  if(list)base=list.map(trackRef).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
  else if(requested&&!base.includes(requested))base=[requested,...base];
@@ -769,7 +872,7 @@ async function play(id,list){
  t=0;
  playing=true;
  upd();
- await startMedia(cur(),true);
+ await startMedia(cur(),true,true);
 }
 async function tog(){
  const s=cur();if(!s)return;
@@ -785,6 +888,7 @@ async function tog(){
 }
 async function nxt(auto=false){
  if(!cur())return;
+ flushHistorySession(false);
  const wasPlaying=auto||!media.paused||playing;
  if(pos+1<order.length)pos++;
  else if(lp||!auto)pos=0;
@@ -796,7 +900,7 @@ async function nxt(auto=false){
   return;
  }
  t=0;playKey=cur()?.k||KEYS[0];
- if(wasPlaying){playing=true;upd();await startMedia(cur(),true)}else{playing=false;setMediaSource(cur(),true);upd()}
+ if(wasPlaying){playing=true;upd();await startMedia(cur(),true,true)}else{playing=false;setMediaSource(cur(),true);upd()}
 }
 async function prv(){
  const s=cur();if(!s)return;
@@ -804,12 +908,12 @@ async function prv(){
  const wasPlaying=!media.paused||playing;
  if(order.length>1)pos=Math.max(0,pos-1);else pos=0;
  t=0;playKey=cur()?.k||KEYS[0];
- if(wasPlaying){playing=true;upd();await startMedia(cur(),true)}else{playing=false;setMediaSource(cur(),true);upd()}
+ if(wasPlaying){playing=true;upd();await startMedia(cur(),true,true)}else{playing=false;setMediaSource(cur(),true);upd()}
 }
 const seekBy=d=>{const s=cur();if(!s)return;const dur=Number.isFinite(media.duration)&&media.duration>0?media.duration:(s.d||0);if(!dur)return;try{media.currentTime=clamp(media.currentTime+d,0,dur);t=media.currentTime;tick()}catch{}};
 const seekRatio=r=>{const s=cur();if(!s)return;const dur=Number.isFinite(media.duration)&&media.duration>0?media.duration:(s.d||0);if(!dur)return;try{media.currentTime=clamp(r,0,1)*dur;t=media.currentTime;tick()}catch{}};
-const setPlaySpeed=v=>{const k=SP.findIndex(x=>x===+v);if(k>=0){spi=k;media.playbackRate=SP[spi];upd()}};
-const setPlayKey=v=>{playKey=v;upd()};
+const setPlaySpeed=v=>{const k=SP.findIndex(x=>x===+v);if(k>=0){spi=k;media.playbackRate=SP[spi];appState.settings.speed=SP[spi];scheduleStateSave();renderSettings();upd()}};
+const setPlayKey=v=>{playKey=v;const s=cur();if(s){s.k=v;saveTrack(s).catch(()=>{});const rowEl=$$('.r').find(r=>r.dataset.s===String(s.i));if(rowEl)$('.c-k',rowEl).textContent=v||'—'};upd()};
 const qi=(s,n)=>s?`<div class="qi${n?' now':''}">${th(s,44)}<div><b>${esc(s.t)}</b><p class="mu sm">${esc(an(s))}</p></div>${n?'<span class="eqa"><i></i><i></i><i></i></span>':`<span class="mu sm">${mm(s.d)}</span>`}</div>`:'';
 function tick(){
  const s=cur(),dur=s?(Number.isFinite(media.duration)&&media.duration>0?media.duration:(s.d||0)):0;
@@ -849,81 +953,84 @@ function upd(){
  $('#shh').classList.toggle('on',sh);$('#spb').innerHTML=SP.map((v,k)=>`<option value="${v}"${k===spi?' selected':''}>${sl(v)}</option>`).join('');$('#pkb').innerHTML=KEYS.map(k=>`<option value="${k}"${k===playKey?' selected':''}>${k}</option>`).join('');$('#spd').innerHTML=`<select class="psel" id="fpSp" aria-label="再生速度">${SP.map((v,k)=>`<option value="${v}"${k===spi?' selected':''}>${sl(v)}</option>`).join('')}</select><select class="psel" id="fpKey" aria-label="再生キー">${KEYS.map(k=>`<option${k===playKey?' selected':''}>${k}</option>`).join('')}</select>`;
  $('#qv').innerHTML=`<h3>再生キュー</h3>${sh?'<p class="hint on">シャッフル中：実際の再生順を表示しています。プレイリストの並び順は変わりません。</p>':''}<p class="ql">再生中</p>${qi(s,1)}<p class="ql">次に再生</p>${order.slice(pos+1,pos+8).map(id=>qi(trackById(id))).join('')||'<p class="mu sm">次に再生する曲はありません。</p>'}`;tick();updateMediaSession(s);
 }
-media.addEventListener('loadedmetadata',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;s.d=Number.isFinite(media.duration)?media.duration:(s.d||0);s.duration=s.d;tick()});
+const fp=(o,q=false)=>{$('#fp').classList.toggle('on',!!o);$('#fp').classList.toggle('q',!!q)};
+media.addEventListener('loadedmetadata',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;s.d=Number.isFinite(media.duration)?media.duration:(s.d||0);s.duration=s.d;saveTrack(s).catch(()=>{});tick()});
 media.addEventListener('timeupdate',()=>{t=media.currentTime||0;playing=!media.paused;tick()});
 media.addEventListener('play',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;playing=true;upd()});
-media.addEventListener('pause',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;playing=false;tick();upd()});
-media.addEventListener('ended',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;nxt(true)});
-media.addEventListener('error',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;playing=false;upd();toast('この音声ファイルを再生できませんでした')});
+media.addEventListener('pause',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;flushHistorySession(true);playing=false;tick();upd()});
+media.addEventListener('ended',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;flushHistorySession(false);nxt(true)});
+media.addEventListener('error',()=>{const s=cur();if(!s||mediaTrackId!==s.id)return;flushHistorySession(false);playing=false;upd();toast('この音声ファイルを再生できませんでした')});
 media.addEventListener('ratechange',()=>{tick()});
 
-/* ---- ルーティング ---- */
-
+/* ---- ルーティング・操作 ---- */
 const V={home:['ホーム',''],library:['ライブラリ','音声を追加'],playlists:['プレイリスト','プレイリストを作成'],stats:['統計',''],highlight:['ハイライト',''],manage:['タグ・アーティスト','タグを追加'],settings:['設定','']};let cv='home';
 function addl(){const l=cv==='manage'?($('#mg .on').dataset.k==='t'?'タグを追加':'アーティストを追加'):cv==='playlists'&&!$('#pd').classList.contains('hid')?'曲を追加':V[cv][1];$('#add').classList.toggle('hid',!l);$('#addt').textContent=l}
-function route(){let v=location.hash.slice(1);if(!V[v])v='home';cv=v;$('#app').dataset.view=v;$$('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));$$('.nv[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='highlight'?'stats':v)));
- if(v==='playlists')closePL();$('#app').classList.remove('nav-open');$('#sc').scrollTop=0;$('#sc').style.overflow=v==='library'?'hidden':'';$('#ttl').textContent=V[v][0];document.title=V[v][0]+' | Sonora';addl();if(v==='library')requestAnimationFrame(vs)}
-const nav=v=>location.hash.slice(1)===v?route():location.hash=v;
-addEventListener('hashchange',route);
-function segs(b){const gr=b.parentElement.dataset.g,k=b.dataset.k;
- if(gr==='per'){$('#cust').classList.toggle('on',k==='カスタム');kpis(k);line(k)}else if(gr==='pv')statp(k);else if(gr==='mg'){$('#tagp').classList.toggle('hid',k!=='t');$('#artp').classList.toggle('hid',k!=='a');addl()}
- else if(gr==='hp'){$('#hht').textContent=k+'のハイライト';mkHL($('#hlh'),k,0)}else if(gr==='hh')mkHL($('#hlb'),k,1)}
-function act(a,el){const m={pp:tog,nx:()=>nxt(),pv:prv,bk10:()=>seekBy(-10),fw10:()=>seekBy(10),sh:()=>{sh=!sh;reord();upd()},lp:()=>{lp=!lp;upd()},q:()=>fp(1,1),fp:()=>fp(1),fx:()=>fp(0),fq:()=>$('#fp').classList.toggle('q'),
+function route(){let v=location.hash.slice(1);if(!V[v])v='home';cv=v;$('#app').dataset.view=v;$$('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));$$('.nv[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='highlight'?'stats':v)));if(v==='playlists')closePL();$('#app').classList.remove('nav-open');$('#sc').scrollTop=0;$('#sc').style.overflow=v==='library'?'hidden':'';$('#ttl').textContent=V[v][0];document.title=V[v][0]+' | Sonora';addl();if(v==='library')requestAnimationFrame(vs);if(v==='stats'){const active=$('.seg[data-g="per"] .on');const period=active?.dataset.k||'30日';kpis(period);line(period);statp($('.seg[data-g="pv"] .on')?.dataset.k||'曲',period)}if(v==='manage')renderMetaLists();if(v==='settings')renderSettings()}
+const nav=v=>location.hash.slice(1)===v?route():location.hash=v;addEventListener('hashchange',route);
+function segs(b){const gr=b.parentElement.dataset.g,k=b.dataset.k;if(gr==='per'){$('#cust').classList.toggle('on',k==='カスタム');kpis(k);line(k);statp($('.seg[data-g="pv"] .on')?.dataset.k||'曲',k)}else if(gr==='pv'){const per=$('.seg[data-g="per"] .on')?.dataset.k||'30日';statp(k,per)}else if(gr==='mg'){$('#tagp').classList.toggle('hid',k!=='t');$('#artp').classList.toggle('hid',k!=='a');addl();renderMetaLists()}else if(gr==='hp'){$('#hht').textContent=k+'のハイライト';mkHL($('#hlh'),k,0)}else if(gr==='hh')mkHL($('#hlb'),k,1)}
+function openBulkTagEditor(indices){const ids=[...new Set(indices.map(i=>S[i]?.id).filter(Boolean))],selected=new Set(ids.flatMap(id=>trackById(id)?.g||[]));openM(`<div class="mh"><h2 class="mt">タグ編集</h2>${X()}</div><div class="fm"><p class="mu sm">${ids.length}曲に適用するタグを選択してください。</p><div class="tgs">${TAGS.map(t=>`<button type="button" class="tg pk${selected.has(t.i)?' on':''}" data-bulk-tag="${t.i}" style="--c:${esc(t.c)};--f:${fg(t.c)}">${esc(t.n)}</button>`).join('')||'<span class="mu sm">タグがまだありません。</span>'}</div></div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok" data-save-kind="bulkTags" data-track-ids="${esc(ids.join('|'))}">保存</button></div>`)}
+function openBulkArtistEditor(indices){const ids=[...new Set(indices.map(i=>S[i]?.id).filter(Boolean))];openM(`<div class="mh"><h2 class="mt">アーティスト編集</h2>${X()}</div><div class="fm"><label>アーティスト<input id="bulkArtistName" placeholder="例：アーティスト名"></label><p class="mu sm">選択した${ids.length}曲のアーティスト情報を、この値で置き換えます。</p></div><div class="ft"><button class="btn" data-close>キャンセル</button><button class="btn pri" data-a="mok" data-save-kind="bulkArtist" data-track-ids="${esc(ids.join('|'))}">保存</button></div>`)}
+async function saveBulkEdit(kind,ids){const tracks=ids.map(trackById).filter(Boolean);if(kind==='bulkTags'){const gs=$$('[data-bulk-tag].on',$('#ms')).map(b=>Number(b.dataset.bulkTag)).filter(Number.isInteger);for(const s of tracks)s.g=[...gs];await Promise.all(tracks.map(saveTrack));toast(`${tracks.length}曲のタグを更新しました`)}else{const name=escText($('#bulkArtistName')?.value);if(!name){toast('アーティスト名を入力してください');return}for(const s of tracks)s.artistNames=[name];appState.artists=[...new Set([...(appState.artists||[]),name])];await Promise.all(tracks.map(saveTrack));normalizeMetaStateAgainstTracks();toast(`${tracks.length}曲のアーティストを更新しました`)}renderMetaLists();home();closeM();}
+async function confirmPlaylistDelete(){const id=String(window._deletePlaylist||'');const was=PL[cp]?.id===id;PL=PL.filter(p=>p.id!==id);appState.playlists=PL;scheduleStateSave();renderMetaLists();if(was)closePL();closeM();toast('プレイリストを削除しました')}
+function act(a,el){const m={
+ pp:()=>tog(),nx:()=>nxt(),pv:()=>prv(),bk10:()=>seekBy(-10),fw10:()=>seekBy(10),
+ sh:()=>{sh=!sh;appState.settings.shuffle=sh;scheduleStateSave();reord();upd()},lp:()=>{lp=!lp;appState.settings.loop=lp;scheduleStateSave();upd()},
+ q:()=>fp(1,true),fp:()=>fp(1,false),fx:()=>fp(0,false),fq:()=>$('#fp').classList.toggle('q'),
  menu:()=>{const a=$('#app');if(innerWidth<768)a.classList.toggle('nav-open');else{a.classList.toggle('col');a.dataset.colManual='1'}},mx:()=>$('#app').classList.remove('nav-open'),col:()=>{if(innerWidth>=768||matchMedia('(orientation:landscape)').matches){const a=$('#app');a.classList.toggle('col');a.dataset.colManual='1'}},
- up:toggleAdd,pick:upload,adc:()=>$('#addp').classList.remove('on'),fb:()=>$('#flt').classList.toggle('on'),fclr:()=>$$('#flt .pk').forEach(b=>b.classList.remove('on')), lsb:()=>pop(el,LS.map(o=>[o[0]]),k=>{const key=LS[k][1];if(key!==lsk){lsk=key;lsd=-1}$('#lst').textContent=sortLabel(LS,lsk);$('#lsd').innerHTML=I('down')+'<span>'+sortDirLabel(lsd)+'</span>';$('#lsd').classList.toggle('asc',lsd>0);$('#lsd').title=sortDirLabel(lsd)}),lsd:()=>{lsd*=-1;$('#lsd').innerHTML=I('down')+'<span>'+sortDirLabel(lsd)+'</span>';$('#lsd').classList.toggle('asc',lsd>0);$('#lsd').title=sortDirLabel(lsd)},
- bx:()=>{sel.clear();bulk()},bpl:()=>toast('プレイリスト機能は次の段階で実装します'),btg:()=>toast('タグ編集機能は次の段階で実装します'),bar:()=>toast('アーティスト編集機能は次の段階で実装します'),bdl:()=>del([...sel]),
- p1:()=>play(+el.dataset.i),dok:async()=>{const ids=[...(window._deleteTargets||[])];closeM();try{await removeStored(ids);sel.clear();bulk();toast('削除しました')}catch{toast('削除に失敗しました')}},mok:()=>{closeM()},
- plb:closePL,plp:()=>{const l=plL.map(s=>s.i);play(l[0],l)},pled:()=>fm('プレイリストを編集',[['名前',`<input value="${PL[cp].n}">`],['説明',`<input value="${PL[cp].d}">`]]),
- plm:()=>pop(el,[['編集','edit'],['削除','trash',1]],k=>k?cf('プレイリストを削除しますか？',`<p>「${PL[cp].n}」を削除します。曲そのものはライブラリに残ります。</p>`,'削除',1):act('pled')),
- psb:()=>pop(el,SO.map(o=>[o[0]]),k=>{const key=SO[k][1];if(key==='m'){sk='m';sd=1}else if(key!==sk){sk=key;sd=-1}renderPL()}),psd:()=>{if(sk!=='m'){sd*=-1;renderPL()}},pre:()=>setEq(+el.dataset.i),
- scr:()=>$('#'+el.dataset.t).scrollIntoView({behavior:'smooth',block:'start'}),tm:()=>pop(el,[['編集','edit'],['削除','trash',1]],()=>toast('（仮）')),am:()=>toast('アーティストを編集します（仮）'),
- cc:()=>cf('キャッシュを削除しますか？','<p>音声のキャッシュとサムネイルの一時データを削除します。</p><p style="margin-top:8px"><b>残るデータ：</b>再生履歴・曲情報・タグ・プレイリスト</p>','キャッシュを削除'),
- ca:()=>cf('すべてのローカルデータを削除しますか？','<p>音声データ・サムネイル・メタデータ・プレイリスト・再生履歴がすべて削除されます。この操作は取り消せません。</p>','完全に削除',1)};(m[a]||(()=>{}))()}
-document.addEventListener('click',e=>{const t0=e.target,c=s=>t0.closest(s);let x;
- if(!c('.mn'))closeP();if(!c('.srch'))$('#sg').classList.remove('on');
- if(c('[data-close]')||t0.id==='md'){closeM();return}
+ up:toggleAdd,pick:upload,adc:()=>$('#addp').classList.remove('on'),fb:()=>$('#flt').classList.toggle('on'),
+ fclr:()=>{filterTags.clear();$('#fa2').value='';$('#fpl').value='';$$('#flt input[type=date]').forEach(x=>x.value='');$('#q').value='';libSearch='';renderMetaLists();applyLibraryView()},
+ lsb:()=>pop(el,LS.map(o=>[o[0]]),k=>{lsk=LS[k][1];lsd=-1;applyLibraryView()}),
+ lsd:()=>{lsd*=-1;applyLibraryView()},
+ bx:()=>{sel.clear();bulk()},bpl:()=>openAddToPlaylist([...sel].map(i=>S[i]?.id).filter(Boolean)),btg:()=>openBulkTagEditor([...sel]),bar:()=>openBulkArtistEditor([...sel]),bdl:()=>del([...sel]),
+ p1:()=>play(+el.dataset.i),dok:async()=>{const ids=[...(window._deleteTargets||[])];closeM();try{await removeStored(ids);toast('削除しました')}catch{toast('削除に失敗しました')}},
+ mok:()=>saveModal(),confirm:()=>confirmAction(el.dataset.confirm),
+ plb:closePL,plp:()=>{const ids=plL.map(s=>s.id);if(ids.length)play(ids[0],ids)},
+ pled:()=>openPlaylistEditor(cp),
+ plm:()=>pop(el,[['編集','edit'],['削除','trash',1]],k=>{if(k){window._deletePlaylist=PL[cp]?.id;cf('プレイリストを削除しますか?',`<p>「${esc(PL[cp]?.n||'')}」を削除します。</p><p class="mu sm">曲そのものはライブラリから削除されません。</p>`,'削除',1,'deletePlaylist')}else openPlaylistEditor(cp)}),
+ psb:()=>pop(el,SO.map(o=>[o[0]]),k=>{const key=SO[k][1];if(key==='m'){sk='m';sd=1}else{if(key!==sk){sk=key;sd=-1}}renderPL()}),psd:()=>{if(sk!=='m'){sd*=-1;renderPL()}},pre:()=>setEqPreset(+el.dataset.i),
+ scr:()=>$('#'+el.dataset.t)?.scrollIntoView({behavior:'smooth',block:'start'}),
+ tm:()=>{const idx=Number(el.closest('.tr')?.dataset.t);if(!TAGS[idx])return;pop(el,[['編集','edit'],['削除','trash',1]],k=>{if(k){window._deleteTagIndex=idx;cf('タグを削除しますか?',`<p>「${esc(TAGS[idx].n)}」を削除します。</p>`,'削除',1,'deleteTag')}else openTagEditor(idx)})},
+ am:()=>{const name=el.closest('[data-artist]')?.dataset.artist||el.closest('.ac2')?.querySelector('b')?.textContent||'';if(!name)return;pop(el,[['編集','edit'],['削除','trash',1]],k=>{if(k){window._deleteArtist=name;cf('アーティストを削除しますか?',`<p>「${esc(name)}」を曲のアーティスト情報からも削除します。</p>`,'削除',1,'deleteArtist')}else openArtistEditor(name)})},
+ cc:()=>cf('キャッシュを削除しますか?','<p>一時的な画像・再生URLを作り直します。曲情報・タグ・プレイリスト・再生履歴は残ります。</p>','キャッシュを削除',0,'clearCache'),
+ ca:()=>cf('すべてのローカルデータを削除しますか?','<p>音声データ・サムネイル・メタデータ・プレイリスト・再生履歴・設定がすべて削除されます。この操作は取り消せません。</p>','完全に削除',1,'clearAll')};(m[a]||(()=>{}))()}
+document.addEventListener('click',e=>{const t0=e.target,c=s=>t0.closest(s);let x;if(!c('.mn'))closeP();if(!c('.srch'))$('#sg').classList.remove('on');if(c('[data-close]')||t0.id==='md'){closeM();return}
  if(x=c('[data-a]')){act(x.dataset.a,x);return}
  if(x=c('[data-v]')){nav(x.dataset.v);return}
- if(x=c('[data-sp]')){spi=+x.dataset.sp;upd();return}
  if(x=c('.seg button')){$$('button',x.parentElement).forEach(b=>b.classList.toggle('on',b===x));segs(x);return}
- if(c('#all')){const on=$('#all').classList.toggle('on');sel=on?new Set([...Array(N).keys()]):new Set();bulk();return}
+ if(c('#all')){const on=$('#all').classList.toggle('on');sel=on?new Set(libraryView):new Set();bulk();return}
  if(x=c('.chk')){const r=x.closest('.r'),i=+r.dataset.i;sel.has(i)?sel.delete(i):sel.add(i);r.classList.toggle('sel');x.classList.toggle('on');bulk();return}
- if(x=c('.mm')){const i=+x.closest('[data-s]').dataset.s;pop(x,[['再生','play'],['プレイリストに追加','plus'],['編集','edit'],['削除','trash',1]],k=>[()=>play(i),()=>toast('プレイリストに追加しました（仮）'),()=>edit(i),()=>del([i])][k]());return}
- if(x=c('.tg.more')){const s=S[+x.closest('[data-s]').dataset.s];if(s)pop(x,[],null,`<div class="tgs" style="padding:8px;max-width:260px">${tags(s,9)}</div>`);return}
- if(x=c('.tg.pk')){x.classList.toggle('on');return}
- if(x=c('.swt')){x.classList.toggle('on');x.setAttribute('aria-checked',x.classList.contains('on'));if(x.closest('.eqctl')){$('#eqdet').classList.toggle('on',x.classList.contains('on'))}return}
+ if(x=c('.mm')){const host=x.closest('[data-s]'),ref=host?.dataset.s,id=trackById(ref)?.id||trackRef(ref);if(id)pop(x,[['再生','play'],['プレイリストに追加','plus'],['編集','edit'],['削除','trash',1]],k=>[()=>play(id),()=>openAddToPlaylist([id]),()=>edit(S.findIndex(s=>s.id===id)),()=>del([S.findIndex(s=>s.id===id)])][k]());return}
+ if(x=c('.tg.more')){const host=x.closest('[data-s]'),s=trackById(host?.dataset.s)||S[+host?.dataset.s];if(s)pop(x,[],null,`<div class="tgs" style="padding:8px;max-width:260px">${tags(s,9)}</div>`);return}
+ if(x=c('[data-filter-tag]')){const idx=Number(x.dataset.filterTag);filterTags.has(idx)?filterTags.delete(idx):filterTags.add(idx);x.classList.toggle('on',filterTags.has(idx));applyLibraryView();return}
+ if(x=c('[data-edit-tag]')){x.classList.toggle('on');return}
+ if(x=c('[data-bulk-tag]')){x.classList.toggle('on');return}
  if(x=c('.rc')){play(+x.dataset.i);return}
  if(x=c('.pc')){openPL(+x.dataset.p);return}
  if(x=c('.r .ti,.r .th')){edit(+x.closest('.r').dataset.s);return}
- if(x=c('.sg button')){$('#q').value=x.lastChild.textContent;$('#sg').classList.remove('on');return}
- if(x=c('.seek')){const r=x.getBoundingClientRect();if(r.width>0)seekRatio((e.clientX-r.left)/r.width)}});
+ if(x=c('.sg button')){$('#q').value=x.querySelector('span')?.textContent||'';libSearch=$('#q').value;$('#sg').classList.remove('on');applyLibraryView();return}
+ if(x=c('.seek')){const r=x.getBoundingClientRect();if(r.width>0)seekRatio((e.clientX-r.left)/r.width)}
+});
 function toggleAdd(){if(cv!=='library')return;$('#addp').classList.toggle('on')}
-$('#add').onclick=()=>({library:toggleAdd,playlists:()=>$('#pd').classList.contains('hid')?fm('プレイリストを作成',[['名前','<input placeholder="例：通勤用">'],['説明','<input>']],'作成'):fm('曲を追加',[['ライブラリから選択',`<select>${S.map(s=>`<option>${s.t}</option>`).join('')}</select>`]],'追加'),
- manage:()=>$('#mg .on').dataset.k==='t'?fm('タグを追加',[['タグ名','<input placeholder="例：作業用">'],['色','<input type="color" value="#6366F1">']],'追加'):fm('アーティストを追加',[['アーティスト名','<input>'],['アイコン',`<button type="button" class="btn wf">${I('upload')}画像を選択</button>`]],'追加')})[cv]?.();
-document.addEventListener('input',e=>{const o=e.target;if(o.classList.contains('cp')){const r=o.closest('.tr'),t1=TAGS[+r.dataset.t];t1.c=o.value;$('.pv',r).innerHTML=chip(t1)}});
-document.addEventListener('change',e=>{const o=e.target;if(o.id==='spb'||o.id==='fpSp')setPlaySpeed(o.value);else if(o.id==='pkb'||o.id==='fpKey')setPlayKey(o.value);else if(o.closest('#cust'))line('カスタム')});
-$('#q').addEventListener('input',e=>{const v=e.target.value.trim().toLowerCase(),b=$('#sg');if(!v){b.classList.remove('on');return}const r=[];
- S.forEach(s=>{if(s.t.toLowerCase().includes(v))r.push(['タイトル',s.t])});A.forEach(a=>{if(a.toLowerCase().includes(v))r.push(['アーティスト',a])});TAGS.forEach(t1=>{if(t1.n.includes(v))r.push(['タグ',t1.n])});
- b.innerHTML=r.slice(0,6).map(([k,x])=>`<button><em>${k}</em><span>${x}</span></button>`).join('')||'<p class="mu">該当する項目がありません</p>';b.classList.add('on')});
-$('#vs').addEventListener('scroll',vs,{passive:true});addEventListener('resize',vs);
-['dragenter','dragover'].forEach(n=>addEventListener(n,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();$('#dz').classList.add('over')}}));
-addEventListener('dragleave',e=>{if(!e.relatedTarget)$('#dz').classList.remove('over')});
-addEventListener('drop',e=>{const d=e.target.closest('#dz');if(!d||cv!=='library')return;e.preventDefault();d.classList.remove('over');upload(e.dataTransfer.files)});
-$('#audioPicker').addEventListener('change',e=>{const files=e.target.files;upload(files);e.target.value=''});
-addEventListener('keydown',e=>{const tg=e.target.tagName;if(e.key==='Escape'){closeM();closeP();fp(0);return}if(/INPUT|SELECT|TEXTAREA/.test(tg)||e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key.toLowerCase();
- if(e.key===' '){if(tg==='BUTTON')return;e.preventDefault();tog()}else if(e.key==='ArrowRight'){seekBy(5)}else if(e.key==='ArrowLeft'){seekBy(-5)}
- else if(k==='n')nxt();else if(k==='p')prv();else if(k==='r')act('lp');else if(k==='s')act('sh')});
+$('#add').onclick=()=>{if(cv==='library'){toggleAdd();return}if(cv==='playlists'){if($('#pd').classList.contains('hid'))openPlaylistEditor(-1);else openPlaylistTrackPicker(cp);return}if(cv==='manage'){if($('#mg .on').dataset.k==='t')openTagEditor(-1);else openArtistEditor('')}}
+
+document.addEventListener('input',e=>{const o=e.target;if(o.classList.contains('cp')){const r=o.closest('.tr'),t1=TAGS[+r.dataset.t];if(t1){t1.c=o.value;$('.pv',r).innerHTML=chip(t1);appState.tags=TAGS.map(t=>({i:t.i,n:t.n,c:t.c}));scheduleStateSave()}}});
+document.addEventListener('change',e=>{const o=e.target;if(o.id==='spb'||o.id==='fpSp')setPlaySpeed(o.value);else if(o.id==='pkb'||o.id==='fpKey')setPlayKey(o.value);else if(o.id==='fa2'||o.id==='fpl'||o.closest('#flt'))applyLibraryView();else if(o.closest('#cust')){const per='カスタム';kpis(per);line(per);statp($('.seg[data-g="pv"] .on')?.dataset.k||'曲',per)}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){const v=e.target.value.trim(),b=$('#sg');libSearch=v;if(!v){b.classList.remove('on');applyLibraryView();return}const low=v.toLocaleLowerCase('ja'),r=[];S.forEach(s=>{if(s.t.toLocaleLowerCase('ja').includes(low))r.push(['タイトル',s.t]);if(an(s).toLocaleLowerCase('ja').includes(low))r.push(['アーティスト',an(s)])});TAGS.forEach(t=>{if(t.n.toLocaleLowerCase('ja').includes(low))r.push(['タグ',t.n])});b.innerHTML=r.slice(0,6).map(([k,x])=>`<button><em>${esc(k)}</em><span>${esc(x)}</span></button>`).join('')||'<p class="mu">該当する項目がありません</p>';b.classList.add('on');applyLibraryView()}});
+document.addEventListener('click',e=>{const swb=e.target.closest('.swt');if(!swb)return;const key=swb.dataset.setting;if(!(key in appState.settings))return;appState.settings[key]=!appState.settings[key];if(key==='eqEnabled')$('#eqdet')?.classList.toggle('on',appState.settings.eqEnabled);applyAudioSettings();scheduleStateSave();renderSettings();});
+document.addEventListener('input',e=>{const o=e.target;if(o.dataset.eqIndex!=null){const i=Number(o.dataset.eqIndex);if(Number.isInteger(i)){appState.settings.eqValues[i]=Number(o.value)||0;appState.settings.eqPreset=-1;applyAudioSettings();scheduleStateSave()}}});
+$('#vs').addEventListener('scroll',vs,{passive:true});addEventListener('resize',()=>{vs();syncSide()});
+['dragenter','dragover'].forEach(n=>addEventListener(n,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();$('#dz').classList.add('over')}}));addEventListener('dragleave',e=>{if(!e.relatedTarget)$('#dz').classList.remove('over')});addEventListener('drop',e=>{const d=e.target.closest('#dz');if(!d||cv!=='library')return;e.preventDefault();d.classList.remove('over');upload(e.dataTransfer.files)});$('#audioPicker').addEventListener('change',e=>{const files=e.target.files;upload(files);e.target.value=''});
+addEventListener('visibilitychange',()=>{if(document.hidden)flushHistorySession(true)});addEventListener('beforeunload',()=>{flushHistorySession(false);saveStateSync()});
+addEventListener('keydown',e=>{const tg=e.target.tagName;if(e.key==='Escape'){closeM();closeP();fp(0);return}if(/INPUT|SELECT|TEXTAREA/.test(tg)||e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key.toLowerCase();if(e.key===' '){e.preventDefault();tog()}else if(e.key==='ArrowRight')seekBy(5);else if(e.key==='ArrowLeft')seekBy(-5);else if(k==='n')nxt();else if(k==='p')prv();else if(k==='r')act('lp');else if(k==='s')act('sh')});
 /* ---- 初期化 ---- */
 $$('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',I(e.dataset.ic)));
 const syncSide=()=>{const a=$('#app');if(matchMedia('(orientation:landscape)').matches)a.classList.remove('nav-open');if(innerWidth<768){a.classList.remove('col');return}if(!a.dataset.colManual){a.classList.toggle('col',innerWidth<1200)}};
 addEventListener('resize',syncSide);
 const NAV=[['home','ホーム','home'],['library','ライブラリ','library'],['playlists','プレイリスト','list'],['stats','統計','chart'],['manage','タグ・アーティスト','tag'],['settings','設定','gear']];
 $('#nav').innerHTML=NAV.map(([v,l,i],k)=>`${k===4?'<div class="gl">管理</div>':''}<button class="nv" data-v="${v}" title="${l}">${I(i)}<span>${l}</span></button>`).join('');
-renderMetaLists();
 dnd($('#pll'));dnd($('#tagl'));home();kpis('30日');line('30日');statp('曲');upd();updateStorageStats();
-loadStoredTracks();
+(async()=>{await loadStoredTracks();sh=!!appState.settings.shuffle;lp=!!appState.settings.loop;spi=Math.max(0,SP.findIndex(v=>v===Number(appState.settings.speed)));if(spi<0)spi=2;renderSettings();applyAudioSettings();upd();applyLibraryView();syncSide();route();if(appState.settings.autoPlay&&S.length){try{await play(S[0].id)}catch{}}})();
 $('#lsd').innerHTML=I('down')+'<span>'+sortDirLabel(lsd)+'</span>';$('#lsd').classList.toggle('asc',lsd>0);$('#lsd').title=sortDirLabel(lsd);syncSide();
-route();
 </script>
 </body>
 </html>
