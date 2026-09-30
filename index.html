@@ -475,29 +475,21 @@ function openDB(){
   r.onerror=()=>reject(r.error||new Error('IndexedDBを開けませんでした'));
  });
 }
-const idbTxRaw=(mode,fn)=>openDB().then(d=>new Promise((resolve,reject)=>{const tx=d.transaction(TRACK_STORE,mode),st=tx.objectStore(TRACK_STORE);let out;try{out=fn(st)}catch(e){reject(e);return}tx.oncomplete=()=>resolve(out);tx.onerror=()=>reject(tx.error||new Error('IndexedDB処理に失敗しました'));tx.onabort=()=>reject(tx.error||new Error('IndexedDB処理が中断されました'))}));
-let persistenceQueue=Promise.resolve();
-const enqueuePersistence=job=>{const run=persistenceQueue.then(job,job);persistenceQueue=run.catch(()=>{});return run};
-const idbTx=(mode,fn)=>enqueuePersistence(()=>idbTxRaw(mode,fn));
+const idbTx=(mode,fn)=>openDB().then(d=>new Promise((resolve,reject)=>{const tx=d.transaction(TRACK_STORE,mode),st=tx.objectStore(TRACK_STORE);let out;try{out=fn(st)}catch(e){reject(e);return}tx.oncomplete=()=>resolve(out);tx.onerror=()=>reject(tx.error||new Error('IndexedDB処理に失敗しました'));tx.onabort=()=>reject(tx.error||new Error('IndexedDB処理が中断されました'))}));
 const dbAll=async()=>{try{return await openDB().then(d=>new Promise((resolve,reject)=>{const r=d.transaction(TRACK_STORE,'readonly').objectStore(TRACK_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)}))}catch{storageFallback=true;return [...memoryTracks]}};
 const dbPut=async o=>{try{return await idbTx('readwrite',st=>st.put(o))}catch{storageFallback=true;memoryTracks=[...memoryTracks.filter(x=>x.id!==o.id),o]}};
 const dbDelete=async id=>{try{return await idbTx('readwrite',st=>st.delete(id))}catch{storageFallback=true;memoryTracks=memoryTracks.filter(x=>x.id!==id)}};
 const dbClear=async()=>{try{return await idbTx('readwrite',st=>st.clear())}catch{storageFallback=true;memoryTracks=[]}};
-const appStateDefault=()=>({id:STATE_KEY,updatedAt:0,tags:[],artists:[],playlists:[],history:[],settings:{autoPlay:false,normalizeVolume:false,eqEnabled:true,eqPreset:0,eqValues:[0,0,0,0,0,0],speed:1,loop:false,shuffle:false}});
+const appStateDefault=()=>({id:STATE_KEY,tags:[],artists:[],playlists:[],history:[],settings:{autoPlay:false,normalizeVolume:false,eqEnabled:true,eqPreset:0,eqValues:[0,0,0,0,0,0],speed:1,loop:false,shuffle:false}});
 let appState=appStateDefault();
-const stateSaveTimer=0;
+let stateSaveTimer=0;
 const localStateKey='sonora-app-state-v2';
-const stateSnapshot=value=>JSON.parse(JSON.stringify(value&&typeof value==='object'?value:appState));
-const touchState=()=>{const current=Number(appState.updatedAt)||0;appState.updatedAt=Math.max(Date.now(),current+1);return appState.updatedAt};
-const readLocalState=()=>{try{return JSON.parse(localStorage.getItem(localStateKey)||'null')}catch{return null}};
-const writeLocalState=value=>{try{localStorage.setItem(localStateKey,JSON.stringify(value))}catch{}};
-const dbStateGet=async()=>{let dbValue=null;try{dbValue=await openDB().then(d=>new Promise((resolve,reject)=>{const r=d.transaction(STATE_STORE,'readonly').objectStore(STATE_STORE).get(STATE_KEY);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)}))}catch{storageFallback=true}const localValue=readLocalState();const dbTime=Number(dbValue?.updatedAt)||0,localTime=Number(localValue?.updatedAt)||0;if(localValue&&localTime>dbTime){return localValue}return dbValue||localValue||null};
-const dbStatePutRaw=async value=>{const snapshot=stateSnapshot(value);try{await openDB().then(d=>new Promise((resolve,reject)=>{const tx=d.transaction(STATE_STORE,'readwrite');tx.objectStore(STATE_STORE).put(snapshot);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('状態の保存に失敗しました'))}))}catch{storageFallback=true}writeLocalState(snapshot)};
-const dbStatePut=async value=>enqueuePersistence(()=>dbStatePutRaw(value));
-const normalizeState=raw=>{const d=appStateDefault(),r=raw&&typeof raw==='object'?raw:{};d.updatedAt=Number(r.updatedAt)||0;d.tags=Array.isArray(r.tags)?r.tags.map((t,i)=>({i,n:escText(t?.n||t?.name||`タグ${i+1}`),c:/^#[0-9a-f]{6}$/i.test(t?.c||t?.color||'')?(t.c||t.color):'#6366F1'})) : [];d.artists=Array.isArray(r.artists)?[...new Set(r.artists.map(escText).filter(Boolean))]:[];d.playlists=Array.isArray(r.playlists)?r.playlists.map((p,i)=>({id:String(p?.id||`pl-${Date.now()}-${i}`),n:escText(p?.n||p?.name||'無題のプレイリスト'),d:escText(p?.d||p?.description||''),ids:Array.isArray(p?.ids)?p.ids.map(String):[]})):[];d.history=Array.isArray(r.history)?r.history.map(h=>({trackId:String(h?.trackId||h?.id||''),startedAt:Number(h?.startedAt)||0,seconds:Math.max(0,Number(h?.seconds)||0)})).filter(h=>h.trackId):[];d.settings={...d.settings,...(r.settings&&typeof r.settings==='object'?r.settings:{})};d.settings.eqValues=Array.isArray(d.settings.eqValues)?Array.from({length:6},(_,i)=>Number(d.settings.eqValues[i])||0):[0,0,0,0,0,0];return d};
-function saveStateSync(bump=false){if(bump)touchState();writeLocalState(stateSnapshot(appState))}
-function scheduleStateSave(){touchState();const snapshot=stateSnapshot(appState);writeLocalState(snapshot);return dbStatePut(snapshot)}
-async function loadAppState(){const raw=await dbStateGet();appState=normalizeState(raw);const local=readLocalState();if(local&&Number(local.updatedAt)>Number(appState.updatedAt))appState=normalizeState(local);writeLocalState(stateSnapshot(appState));if(raw&&Number(appState.updatedAt)>Number(raw.updatedAt||0)){await dbStatePut(appState).catch(()=>{})}}
+const dbStateGet=async()=>{try{const value=await openDB().then(d=>new Promise((resolve,reject)=>{const r=d.transaction(STATE_STORE,'readonly').objectStore(STATE_STORE).get(STATE_KEY);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)}));if(value)return value}catch{storageFallback=true}try{return JSON.parse(localStorage.getItem(localStateKey)||'null')}catch{return null}};
+const dbStatePut=async value=>{try{await openDB().then(d=>new Promise((resolve,reject)=>{const tx=d.transaction(STATE_STORE,'readwrite');tx.objectStore(STATE_STORE).put(value);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)}))}catch{storageFallback=true}try{localStorage.setItem(localStateKey,JSON.stringify(value))}catch{}};
+const normalizeState=raw=>{const d=appStateDefault(),r=raw&&typeof raw==='object'?raw:{};d.tags=Array.isArray(r.tags)?r.tags.map((t,i)=>({i,n:escText(t?.n||t?.name||`タグ${i+1}`),c:/^#[0-9a-f]{6}$/i.test(t?.c||t?.color||'')?(t.c||t.color):'#6366F1'})) : [];d.artists=Array.isArray(r.artists)?[...new Set(r.artists.map(escText).filter(Boolean))]:[];d.playlists=Array.isArray(r.playlists)?r.playlists.map((p,i)=>({id:String(p?.id||`pl-${Date.now()}-${i}`),n:escText(p?.n||p?.name||'無題のプレイリスト'),d:escText(p?.d||p?.description||''),ids:Array.isArray(p?.ids)?p.ids.map(String):[]})):[];d.history=Array.isArray(r.history)?r.history.map(h=>({trackId:String(h?.trackId||h?.id||''),startedAt:Number(h?.startedAt)||0,seconds:Math.max(0,Number(h?.seconds)||0)})).filter(h=>h.trackId):[];d.settings={...d.settings,...(r.settings&&typeof r.settings==='object'?r.settings:{})};d.settings.eqValues=Array.isArray(d.settings.eqValues)?Array.from({length:6},(_,i)=>Number(d.settings.eqValues[i])||0):[0,0,0,0,0,0];return d};
+function saveStateSync(){try{localStorage.setItem(localStateKey,JSON.stringify(appState))}catch{}}
+function scheduleStateSave(){saveStateSync();clearTimeout(stateSaveTimer);stateSaveTimer=setTimeout(()=>{dbStatePut(appState).catch(()=>{})},80)}
+async function loadAppState(){const raw=await dbStateGet();appState=normalizeState(raw);saveStateSync()}
 
 function mediaMime(file){if(file.type&&file.type.startsWith('audio/'))return file.type;const e=fileExt(file.name);return ({mp3:'audio/mpeg',wav:'audio/wav',flac:'audio/flac',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/opus',aac:'audio/aac',m4a:'audio/mp4',mp4:'audio/mp4',aiff:'audio/aiff',aif:'audio/aiff',webm:'audio/webm'})[e]||'application/octet-stream'}
 function isAudioFile(file){return !!file&&((file.type||'').startsWith('audio/')||/\.(mp3|wav|flac|ogg|oga|opus|aac|m4a|mp4|aiff|aif|webm)$/i.test(file.name||''))}
@@ -579,8 +571,8 @@ async function parseAudioFile(file){
  return {id,fp,name:file.name,mime,size:file.size,lastModified:file.lastModified||0,addedAt:Date.now(),title,artistNames:[...new Set(String(meta.artist||'').split(/\u0000+/).map(escText).filter(Boolean))],album:escText(meta.album),genre:escText(meta.genre),pdTs:date.ts,pdPrecision:date.precision,duration:dur.duration,h:hashHue(title),p:0,k:'',g:[],blob:file,coverBlob:meta.cover?.blob||null,url:dur.url,coverUrl:''};
 }
 function storedTrack(s){const o={...s};delete o.i;delete o.pd;delete o.url;delete o.coverUrl;return o}
-async function saveTrack(s){if(!s)return;await dbPut(storedTrack(s));await scheduleStateSave()}
-async function saveAllTrackMetadata(){await Promise.all(S.map(storedTrack).map(dbPut));await scheduleStateSave()}
+async function saveTrack(s){if(!s)return;await dbPut(storedTrack(s));scheduleStateSave()}
+async function saveAllTrackMetadata(){await Promise.all(S.map(storedTrack).map(dbPut));scheduleStateSave()}
 function normalizeMetaStateAgainstTracks(){
  const present=new Set(S.map(s=>s.id));
  appState.playlists=appState.playlists.map(p=>({...p,ids:[...new Set((p.ids||[]).map(String).filter(id=>present.has(id)))]}));
@@ -622,7 +614,7 @@ async function removeStored(ids){
  appState.playlists=appState.playlists.map(p=>({...p,ids:p.ids.filter(id=>!gone.has(String(id)))}));
  base=base.filter(id=>!gone.has(String(id)));order=order.filter(id=>!gone.has(String(id)));
  hydrateTracks(S.filter(s=>!gone.has(s.id)).map(s=>({...storedTrack(s),pdTs:s.pd?.getTime?.()||s.pdTs})));
- touchState();saveStateSync();await dbStatePut(appState);sel.clear();bulk();
+ await dbStatePut(appState);sel.clear();bulk();
 }
 async function computeDuplicateSet(){const rows=await dbAll();return new Set(rows.map(s=>s.fp).filter(Boolean))}
 function renderMetaLists(){
@@ -1030,7 +1022,7 @@ document.addEventListener('click',e=>{const swb=e.target.closest('.swt');if(!swb
 document.addEventListener('input',e=>{const o=e.target;if(o.dataset.eqIndex!=null){const i=Number(o.dataset.eqIndex);if(Number.isInteger(i)){appState.settings.eqValues[i]=Number(o.value)||0;appState.settings.eqPreset=-1;applyAudioSettings();scheduleStateSave()}}});
 $('#vs').addEventListener('scroll',vs,{passive:true});addEventListener('resize',()=>{vs();syncSide()});
 ['dragenter','dragover'].forEach(n=>addEventListener(n,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();$('#dz').classList.add('over')}}));addEventListener('dragleave',e=>{if(!e.relatedTarget)$('#dz').classList.remove('over')});addEventListener('drop',e=>{const d=e.target.closest('#dz');if(!d||cv!=='library')return;e.preventDefault();d.classList.remove('over');upload(e.dataTransfer.files)});$('#audioPicker').addEventListener('change',e=>{const files=e.target.files;upload(files);e.target.value=''});
-addEventListener('visibilitychange',()=>{if(document.hidden)flushHistorySession(true)});addEventListener('beforeunload',()=>{flushHistorySession(false);saveStateSync(true)});
+addEventListener('visibilitychange',()=>{if(document.hidden)flushHistorySession(true)});addEventListener('beforeunload',()=>{flushHistorySession(false);saveStateSync()});
 addEventListener('keydown',e=>{const tg=e.target.tagName;if(e.key==='Escape'){closeM();closeP();fp(0);return}if(/INPUT|SELECT|TEXTAREA/.test(tg)||e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key.toLowerCase();if(e.key===' '){e.preventDefault();tog()}else if(e.key==='ArrowRight')seekBy(5);else if(e.key==='ArrowLeft')seekBy(-5);else if(k==='n')nxt();else if(k==='p')prv();else if(k==='r')act('lp');else if(k==='s')act('sh')});
 /* ---- 初期化 ---- */
 $$('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',I(e.dataset.ic)));
@@ -1039,7 +1031,7 @@ addEventListener('resize',syncSide);
 const NAV=[['home','ホーム','home'],['library','ライブラリ','library'],['playlists','プレイリスト','list'],['stats','統計','chart'],['manage','タグ・アーティスト','tag'],['settings','設定','gear']];
 $('#nav').innerHTML=NAV.map(([v,l,i],k)=>`${k===4?'<div class="gl">管理</div>':''}<button class="nv" data-v="${v}" title="${l}">${I(i)}<span>${l}</span></button>`).join('');
 dnd($('#pll'));dnd($('#tagl'));home();kpis('30日');line('30日');statp('曲');upd();updateStorageStats();
-(async()=>{await loadAppState();await loadStoredTracks();sh=!!appState.settings.shuffle;lp=!!appState.settings.loop;spi=Math.max(0,SP.findIndex(v=>v===Number(appState.settings.speed)));if(spi<0)spi=2;renderSettings();applyAudioSettings();upd();applyLibraryView();syncSide();route();if(appState.settings.autoPlay&&S.length){try{await play(S[0].id)}catch{}}})();
+(async()=>{await loadStoredTracks();sh=!!appState.settings.shuffle;lp=!!appState.settings.loop;spi=Math.max(0,SP.findIndex(v=>v===Number(appState.settings.speed)));if(spi<0)spi=2;renderSettings();applyAudioSettings();upd();applyLibraryView();syncSide();route();if(appState.settings.autoPlay&&S.length){try{await play(S[0].id)}catch{}}})();
 $('#lsd').innerHTML=I('down')+'<span>'+sortDirLabel(lsd)+'</span>';$('#lsd').classList.toggle('asc',lsd>0);$('#lsd').title=sortDirLabel(lsd);syncSide();
 </script>
 </body>
