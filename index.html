@@ -449,8 +449,12 @@ const g=h=>`radial-gradient(circle at 75% 15%,rgba(255,255,255,.35),transparent 
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fileExt=n=>(String(n).match(/\.([^.]+)$/)?.[1]||'').toLowerCase();
 const hashHue=v=>{let h=0;for(const ch of String(v||'')){h=((h<<5)-h+ch.codePointAt(0))|0}return ((h%360)+360)%360};
-const bgStyle=s=>s?.coverUrl?`background-image:url('${String(s.coverUrl).replace(/'/g,'%27')}');background-size:cover;background-position:center`:`background:${g(s?.h??hashHue(s?.t||''))}`;
+const bgStyle=s=>{
+ if(s?.coverBlob&&!s.coverUrl)ensureTrackUrls(s);
+ return s?.coverUrl?`background-image:url('${String(s.coverUrl).replace(/'/g,'%27')}');background-size:cover;background-position:center`:`background:${g(s?.h??hashHue(s?.t||''))}`
+};
 const th=(s,px,c='')=>{
+ if(s?.coverBlob&&!s.coverUrl)ensureTrackUrls(s);
  const has=!!s?.coverUrl, fallback=esc((s?.t||'?')[0]), id=esc(s?.id||'');
  return `<div class="th ${c}${has?' has-cover':''}" style="--s:${px}px;background:${g(s?.h??hashHue(s?.t||''))}" data-c="${fallback}" data-track-id="${id}">${has?`<img src="${esc(s.coverUrl)}" alt="" loading="eager" decoding="async">`:''}</div>`
 };
@@ -482,12 +486,13 @@ function openDB(){
    if(!d.objectStoreNames.contains(TRACK_STORE))d.createObjectStore(TRACK_STORE,{keyPath:'id'});
    if(!d.objectStoreNames.contains(STATE_STORE))d.createObjectStore(STATE_STORE,{keyPath:'id'});
   };
-  r.onsuccess=()=>{db=r.result;resolve(db)};
+  r.onblocked=()=>reject(new Error('IndexedDBの更新がブロックされています'));
+  r.onsuccess=()=>{db=r.result;db.onversionchange=()=>{try{db.close()}catch{}db=null};resolve(db)};
   r.onerror=()=>reject(r.error||new Error('IndexedDBを開けませんでした'));
  });
 }
 const idbTx=(mode,fn)=>openDB().then(d=>new Promise((resolve,reject)=>{const tx=d.transaction(TRACK_STORE,mode),st=tx.objectStore(TRACK_STORE);let out;try{out=fn(st)}catch(e){reject(e);return}tx.oncomplete=()=>resolve(out);tx.onerror=()=>reject(tx.error||new Error('IndexedDB処理に失敗しました'));tx.onabort=()=>reject(tx.error||new Error('IndexedDB処理が中断されました'))}));
-const dbAll=async()=>{try{return await openDB().then(d=>new Promise((resolve,reject)=>{const r=d.transaction(TRACK_STORE,'readonly').objectStore(TRACK_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)}))}catch{storageFallback=true;return [...memoryTracks]}};
+const dbAll=async()=>{for(let attempt=0;attempt<3;attempt++){try{return await openDB().then(d=>new Promise((resolve,reject)=>{const r=d.transaction(TRACK_STORE,'readonly').objectStore(TRACK_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error||new Error('曲データの読み込みに失敗しました'))}))}catch{if(db){try{db.close()}catch{}db=null}if(attempt<2)await new Promise(resolve=>setTimeout(resolve,60*(attempt+1)))}}storageFallback=true;return [...memoryTracks]};
 const dbPut=async o=>{try{return await idbTx('readwrite',st=>st.put(o))}catch{storageFallback=true;memoryTracks=[...memoryTracks.filter(x=>x.id!==o.id),o]}};
 const dbDelete=async id=>{try{return await idbTx('readwrite',st=>st.delete(id))}catch{storageFallback=true;memoryTracks=memoryTracks.filter(x=>x.id!==id)}};
 const dbClear=async()=>{try{return await idbTx('readwrite',st=>st.clear())}catch{storageFallback=true;memoryTracks=[]}};
@@ -498,7 +503,7 @@ const localStateKey='sonora-app-state-v2';
 const localTrackMetaKey='sonora-track-meta-v1';
 const stateOrderKey=o=>[Number(o?.revision)||0,Number(o?.updatedAt)||0];
 const isStateNewer=(a,b)=>{const [ar,at]=stateOrderKey(a),[br,bt]=stateOrderKey(b);return ar>br||(ar===br&&at>bt)};
-const dbStateGet=async()=>{try{return await openDB().then(d=>new Promise((resolve,reject)=>{const r=d.transaction(STATE_STORE,'readonly').objectStore(STATE_STORE).get(STATE_KEY);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error)}))}catch{storageFallback=true;return null}};
+const dbStateGet=async()=>{for(let attempt=0;attempt<3;attempt++){try{return await openDB().then(d=>new Promise((resolve,reject)=>{const r=d.transaction(STATE_STORE,'readonly').objectStore(STATE_STORE).get(STATE_KEY);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error||new Error('状態の読み込みに失敗しました'))}))}catch{if(db){try{db.close()}catch{}db=null}if(attempt<2)await new Promise(resolve=>setTimeout(resolve,60*(attempt+1)))}}storageFallback=true;return null};
 const dbStatePut=async value=>{try{await openDB().then(d=>new Promise((resolve,reject)=>{const tx=d.transaction(STATE_STORE,'readwrite');tx.objectStore(STATE_STORE).put(value);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('状態の保存に失敗しました'));tx.onabort=()=>reject(tx.error||new Error('状態の保存が中断されました'))}))}catch{storageFallback=true;throw new Error('状態の保存に失敗しました')}};
 const readLocalState=()=>{try{return JSON.parse(localStorage.getItem(localStateKey)||'null')}catch{return null}};
 const writeLocalState=value=>{try{localStorage.setItem(localStateKey,JSON.stringify(value));return true}catch{return false}};
@@ -635,7 +640,7 @@ function hydrateTracks(rows){
  S.forEach(s=>{if(!nextIds.has(s.id)){if(s.url)URL.revokeObjectURL(s.url);if(s.coverUrl)URL.revokeObjectURL(s.coverUrl)}});
  S=hydratedRows.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)).map((raw,i)=>{
   const s={...raw};const old=oldById.get(s.id);
-  return ensureTrackUrls({...s,i,t:s.title||s.t||'',adTs:s.addedAt||s.adTs||null,p:Number(s.p)||0,g:Array.isArray(s.g)?s.g.map(Number).filter(Number.isInteger):[],artistNames:Array.isArray(s.artistNames)?s.artistNames.map(escText).filter(Boolean):[],pd:s.pdTs?new Date(s.pdTs):null,d:Number(s.duration||s.d)||0,url:old?.url||'',coverUrl:old?.coverUrl||'',h:Number.isFinite(s.h)?s.h:hashHue(s.title||s.t||'')});
+  return {...s,i,t:s.title||s.t||'',adTs:s.addedAt||s.adTs||null,p:Number(s.p)||0,g:Array.isArray(s.g)?s.g.map(Number).filter(Number.isInteger):[],artistNames:Array.isArray(s.artistNames)?s.artistNames.map(escText).filter(Boolean):[],pd:s.pdTs?new Date(s.pdTs):null,d:Number(s.duration||s.d)||0,url:old?.url||'',coverUrl:old?.coverUrl||'',h:Number.isFinite(s.h)?s.h:hashHue(s.title||s.t||'')};
  });
  normalizeMetaStateAgainstTracks();rebuildDerivedStats();
  base=base.filter(id=>S.some(s=>s.id===id));order=order.filter(id=>S.some(s=>s.id===id));
@@ -710,7 +715,7 @@ function pop(b,items,cb,raw){closeP();const m=document.createElement('div');m.cl
  m.onclick=e=>{const k=e.target.closest('button[data-k]');if(k&&cb){closeP();cb(+k.dataset.k)}}}
 const dots=n=>`<div class="dots">${Array.from({length:n},(_,k)=>`<button class="dt${k?'':' on'}" aria-label="${k+1}枚目"></button>`).join('')}</div>`;
 function waitForNextPaint(count=2){return new Promise(resolve=>{let n=0;const step=()=>{if(++n>=count)resolve();else requestAnimationFrame(step)};requestAnimationFrame(step)})}
-async function waitForVisibleImages(root=document){const imgs=$$('img',root);if(!imgs.length)return;await Promise.all(imgs.map(img=>new Promise(resolve=>{if(img.complete){resolve();return}let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);img.removeEventListener('load',finish);img.removeEventListener('error',finish);resolve()};const timer=setTimeout(finish,5000);img.addEventListener('load',finish,{once:true});img.addEventListener('error',finish,{once:true})})))}
+async function waitForVisibleImages(root=document){const imgs=$$('img',root);if(!imgs.length)return;await Promise.all(imgs.map(img=>new Promise(resolve=>{let done=false,src=img.currentSrc||img.src;const finish=ok=>{if(done)return;if(ok||img.dataset.retry==='1'&&src!==(img.currentSrc||img.src)){if(ok){done=true;clearTimeout(timer);img.removeEventListener('load',onLoad);img.removeEventListener('error',onError);resolve()}else{src=img.currentSrc||img.src}}else{done=true;clearTimeout(timer);img.removeEventListener('load',onLoad);img.removeEventListener('error',onError);resolve()}};const onLoad=()=>finish(img.naturalWidth>0);const onError=()=>finish(false);const timer=setTimeout(()=>{done=true;img.removeEventListener('load',onLoad);img.removeEventListener('error',onError);resolve()},8000);if(img.complete&&img.naturalWidth>0){done=true;clearTimeout(timer);resolve();return}img.addEventListener('load',onLoad);img.addEventListener('error',onError)})))}
 function cyc(el,ms){clearInterval(el._t);const sl=$$('.sl',el),ds=$$('.dt',el),ct=$('.ct',el);let k=0;
  const go=n=>{k=n;sl.forEach((e,j)=>{e.classList.toggle('out',e.classList.contains('on')&&j!==k);e.classList.toggle('on',j===k)});ds.forEach((d,j)=>d.classList.toggle('on',j===k));if(ct)ct.textContent=`${k+1} / ${sl.length}`};
  ds.forEach((d,j)=>d.onclick=()=>go(j));el._t=setInterval(()=>{if(el.offsetParent&&!el.matches(':hover'))go((k+1)%sl.length)},ms)}
@@ -868,7 +873,7 @@ function applyAudioSettings(){
  if(eqNodes.length){eqNodes.forEach((n,i)=>n.gain.value=appState.settings.eqEnabled?Number(appState.settings.eqValues?.[i])||0:0)}
  if(normalizeNode){if(appState.settings.normalizeVolume){normalizeNode.threshold.value=-24;normalizeNode.knee.value=18;normalizeNode.ratio.value=3.5;normalizeNode.attack.value=.003;normalizeNode.release.value=.25}else{normalizeNode.threshold.value=0;normalizeNode.knee.value=0;normalizeNode.ratio.value=1;normalizeNode.attack.value=.003;normalizeNode.release.value=.25}}
 }
-async function resumeAudioContext(){if(!audioCtx||document.hidden)return false;try{if(audioCtx.state==='suspended'||audioCtx.state==='interrupted'){await audioCtx.resume()}return audioCtx.state==='running'}catch{return false}}
+async function resumeAudioContext(){if(!audioCtx)return false;try{if(audioCtx.state==='suspended'||audioCtx.state==='interrupted'){await audioCtx.resume()}return audioCtx.state==='running'}catch{return false}}
 function beginHistorySession(s,countPlay=false){if(!s)return;if(historySession&&historySession.trackId===s.id){historyFlushAt=performance.now();return}flushHistorySession(false);const entry={trackId:s.id,startedAt:Date.now(),seconds:0};appState.history.push(entry);if(countPlay)s.p=Number(s.p||0)+1;historySession={trackId:s.id,entry,lastClock:performance.now()};historyFlushAt=historySession.lastClock;rebuildDerivedStats();scheduleStateSave();if(countPlay){saveTrack(s).catch(()=>{});home();kpis('30日');line('30日');statp('曲')}}
 function flushHistorySession(keep=true){if(!historySession)return;const nowp=performance.now();const delta=Math.max(0,(nowp-historySession.lastClock)/1000);if(delta>0)historySession.entry.seconds+=delta*Math.max(.1,media.playbackRate||1);historySession.lastClock=nowp;if(!keep)historySession=null;scheduleStateSave();if(!keep){home();kpis('30日');line('30日');statp('曲')}}
 function updateMediaSourceAfterCacheClear(){const s=cur();if(!s)return;const wasPlaying=!media.paused;if(mediaTrackId===s.id){media.pause();media.removeAttribute('src');media.load();mediaTrackId=null;setMediaSource(s,true);if(wasPlaying)startMedia(s,true,false).catch(()=>{})}}
@@ -879,38 +884,62 @@ const trackRef=ref=>S[ref]?.id||ref||null;
 const cur=()=>trackById(order[pos]);
 const shuf=(b,f)=>{const r=b.filter(x=>x!==f);for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]]}return f==null?r:[f,...r]};
 const reord=()=>{const s=cur();if(!s)return;const id=s.id;order=sh?shuf(base,id):base.slice();pos=Math.max(0,order.indexOf(id))};
+let playbackCommand=0;
 const setMediaSource=(s,reset=true)=>{
- if(!s?.url||!media)return false;
+ if(!s?.blob||!media)return false;
+ ensureTrackUrls(s);
+ if(!s.url)return false;
  const same=mediaTrackId===s.id&&media.src===s.url;
  if(!same){mediaLoadToken++;media.pause();mediaTrackId=s.id;media.src=s.url;media.load();}
  media.playbackRate=SP[spi];
  if(reset||media.ended){try{media.currentTime=0}catch{}}
  return true;
 };
-const startMedia=async(s,reset=false,recordPlay=false)=>{
+const waitForMediaReady=(s,request,timeout=12000)=>new Promise(resolve=>{
+ if(request!==playbackCommand||mediaTrackId!==s.id){resolve(false);return}
+ if(media.readyState>=HTMLMediaElement.HAVE_FUTURE_DATA){resolve(true);return}
+ let done=false;
+ const finish=ok=>{if(done)return;done=true;clearTimeout(timer);media.removeEventListener('canplay',onReady);media.removeEventListener('error',onError);resolve(ok&&request===playbackCommand&&mediaTrackId===s.id)};
+ const onReady=()=>finish(true),onError=()=>finish(false),timer=setTimeout(()=>finish(media.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA),timeout);
+ media.addEventListener('canplay',onReady,{once:true});
+ media.addEventListener('error',onError,{once:true});
+});
+const startMedia=async(s,reset=false,recordPlay=false,request=playbackCommand)=>{
  if(!setMediaSource(s,reset))return false;
  ensureAudioGraph();
  const token=mediaLoadToken;
  try{
   configureAudioSession();
-  if(!document.hidden)await resumeAudioContext();
-  const playPromise=media.play();
-  await playPromise;
-  if(token!==mediaLoadToken||mediaTrackId!==s.id||media.paused)return false;
-  if(!document.hidden)await resumeAudioContext();
+  const resumePromise=resumeAudioContext();
+  if(request!==playbackCommand||token!==mediaLoadToken||mediaTrackId!==s.id)return false;
+  let playPromise;
+  try{playPromise=media.play();await playPromise}catch(e){
+   if(request!==playbackCommand||token!==mediaLoadToken||mediaTrackId!==s.id)return false;
+   if(e?.name==='AbortError'){
+    if(!await waitForMediaReady(s,request,3000))return false;
+    await media.play();
+   }else throw e;
+  }
+  if(request!==playbackCommand||token!==mediaLoadToken||mediaTrackId!==s.id||media.paused)return false;
+  try{await resumePromise}catch{}
+  await resumeAudioContext();
+  if(request!==playbackCommand)return false;
   beginHistorySession(s,recordPlay);
   return true;
  }catch(e){
-  if(token===mediaLoadToken){playing=false;upd();if(e?.name==='NotAllowedError')toast('ブラウザの設定により再生できません。再生ボタンをもう一度押してください');else toast('この音声を再生できませんでした')}
+  if(request===playbackCommand&&token===mediaLoadToken){playing=false;upd();if(e?.name==='NotAllowedError')toast('ブラウザの設定により再生できません。再生ボタンをもう一度押してください');else toast('この音声を再生できませんでした')}
   return false;
  }
 };
 async function play(id,list){
+ const request=++playbackCommand;
  if(!S.length)return;
  flushHistorySession(false);
  const requested=trackRef(id);
  if(list)base=list.map(trackRef).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+ else if(cv==='library')base=libraryView.map(i=>S[i]?.id).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
  else if(requested&&!base.includes(requested))base=[requested,...base];
+ if(requested&&!base.includes(requested))base=[requested,...base];
  if(!base.length&&requested)base=[requested];
  if(!base.length)return;
  order=sh?shuf(base.slice(),requested):base.slice();
@@ -920,21 +949,24 @@ async function play(id,list){
  t=0;
  playing=true;
  upd();
- await startMedia(cur(),true,true);
+ const ok=await startMedia(cur(),true,true,request);
+ if(!ok&&request===playbackCommand){playing=false;upd()}
 }
 async function tog(){
- const s=cur();if(!s)return;
- if(mediaTrackId!==s.id||media.src!==s.url){playing=true;upd();await startMedia(s,true);return}
+ const request=++playbackCommand,s=cur();if(!s)return;
+ ensureTrackUrls(s);
+ if(mediaTrackId!==s.id||media.src!==s.url){playing=true;upd();const ok=await startMedia(s,true,false,request);if(!ok&&request===playbackCommand){playing=false;upd()}return}
  if(media.paused){
   playing=true;upd();
   if(media.ended){try{media.currentTime=0}catch{}}
-  const ok=await startMedia(s,false);
-  if(!ok){playing=false;upd()}
+  const ok=await startMedia(s,false,false,request);
+  if(!ok&&request===playbackCommand){playing=false;upd()}
  }else{
   media.pause();
  }
 }
 async function nxt(auto=false){
+ const request=++playbackCommand;
  if(!cur())return;
  flushHistorySession(false);
  const wasPlaying=auto||!media.paused||playing;
@@ -948,15 +980,16 @@ async function nxt(auto=false){
   return;
  }
  t=0;playKey=cur()?.k||KEYS[0];
- if(wasPlaying){playing=true;upd();await startMedia(cur(),true,true)}else{playing=false;setMediaSource(cur(),true);upd()}
+ if(wasPlaying){playing=true;upd();const ok=await startMedia(cur(),true,true,request);if(!ok&&request===playbackCommand){playing=false;upd()}}else{playing=false;setMediaSource(cur(),true);upd()}
 }
 async function prv(){
  const s=cur();if(!s)return;
  if(t>3){try{media.currentTime=0}catch{}t=0;tick();return}
+ const request=++playbackCommand;
  const wasPlaying=!media.paused||playing;
  if(order.length>1)pos=Math.max(0,pos-1);else pos=0;
  t=0;playKey=cur()?.k||KEYS[0];
- if(wasPlaying){playing=true;upd();await startMedia(cur(),true,true)}else{playing=false;setMediaSource(cur(),true);upd()}
+ if(wasPlaying){playing=true;upd();const ok=await startMedia(cur(),true,true,request);if(!ok&&request===playbackCommand){playing=false;upd()}}else{playing=false;setMediaSource(cur(),true);upd()}
 }
 const seekBy=d=>{const s=cur();if(!s)return;const dur=Number.isFinite(media.duration)&&media.duration>0?media.duration:(s.d||0);if(!dur)return;try{media.currentTime=clamp(media.currentTime+d,0,dur);t=media.currentTime;tick()}catch{}};
 const seekRatio=r=>{const s=cur();if(!s)return;const dur=Number.isFinite(media.duration)&&media.duration>0?media.duration:(s.d||0);if(!dur)return;try{media.currentTime=clamp(r,0,1)*dur;t=media.currentTime;tick()}catch{}};
@@ -976,6 +1009,7 @@ function tick(){
 function updateMediaSession(s){
  if(!('mediaSession' in navigator)||typeof MediaMetadata==='undefined')return;
  try{
+  if(s?.coverBlob&&!s.coverUrl)ensureTrackUrls(s);
   navigator.mediaSession.metadata=new MediaMetadata({title:s?.t||'Sonora',artist:an(s)||'',album:s?.album||'',artwork:s?.coverUrl?[{src:s.coverUrl,sizes:'',type:s.coverBlob?.type||'image/jpeg'}]:[]});
  }catch{}
  const handlers={
@@ -1077,8 +1111,8 @@ const syncSide=()=>{const a=$('#app');if(matchMedia('(orientation:landscape)').m
 addEventListener('resize',syncSide);
 const NAV=[['home','ホーム','home'],['library','ライブラリ','library'],['playlists','プレイリスト','list'],['stats','統計','chart'],['manage','タグ・アーティスト','tag'],['settings','設定','gear']];
 $('#nav').innerHTML=NAV.map(([v,l,i],k)=>`${k===4?'<div class="gl">管理</div>':''}<button class="nv" data-v="${v}" title="${l}">${I(i)}<span>${l}</span></button>`).join('');
-dnd($('#pll'));dnd($('#tagl'));home();kpis('30日');line('30日');statp('曲');upd();updateStorageStats();
-(async()=>{try{await loadAppState();await loadStoredTracks();scheduleStateSave();sh=!!appState.settings.shuffle;lp=!!appState.settings.loop;spi=Math.max(0,SP.findIndex(v=>v===Number(appState.settings.speed)));if(spi<0)spi=2;renderSettings();applyAudioSettings();upd();applyLibraryView();syncSide();route();scheduleVS();if(appState.settings.autoPlay&&S.length){try{await play(S[0].id)}catch{}}await waitForVisibleImages($('#app'));if(document.fonts?.ready)try{await document.fonts.ready}catch{}await waitForNextPaint(2)}finally{document.body.classList.remove('booting')}})();
+dnd($('#pll'));dnd($('#tagl'));
+(async()=>{try{await loadAppState();await loadStoredTracks();sh=!!appState.settings.shuffle;lp=!!appState.settings.loop;spi=Math.max(0,SP.findIndex(v=>v===Number(appState.settings.speed)));if(spi<0)spi=2;renderSettings();applyAudioSettings();upd();applyLibraryView();syncSide();route();scheduleVS();if(appState.settings.autoPlay&&S.length){try{await play(S[0].id)}catch{}}await waitForVisibleImages($('#app'));if(document.fonts?.ready)try{await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,1500))])}catch{}await waitForNextPaint(2)}finally{document.body.classList.remove('booting')}})();
 $('#lsd').innerHTML=I('down')+'<span>'+sortDirLabel(lsd)+'</span>';$('#lsd').classList.toggle('asc',lsd>0);$('#lsd').title=sortDirLabel(lsd);syncSide();
 </script>
 </body>
