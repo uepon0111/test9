@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>SEKAI RESULT | リザルト管理</title><script src="https://accounts.google.com/gsi/client" async defer></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F3F8FE;--ink:#14213D;--mu:#6A7A94;--ln:#E1EAF6;--bl:#2C7BF5;--gr:#14C29B;--br:linear-gradient(135deg,#2C7BF5,#14C29B);--sh:0 8px 28px rgba(44,123,245,.12);--pd:22px;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,:before,:after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.55 "Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;overflow:hidden}
+[hidden]{display:none!important}
+button,input,select{font:inherit;color:inherit}em{font-style:normal}
+.ic{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#app{display:flex;height:100%}
+#side{width:236px;flex:none;background:#fff;border-right:1px solid var(--ln);display:flex;flex-direction:column;padding:14px 12px;transition:width .35s cubic-bezier(.2,.8,.2,1),padding .35s cubic-bezier(.2,.8,.2,1),border-width .35s cubic-bezier(.2,.8,.2,1),visibility .35s,transform .35s cubic-bezier(.2,.8,.2,1);z-index:30;overflow:hidden}
+#app.col #side{width:0;padding-left:0;padding-right:0;border-right-width:0;visibility:hidden}
+.brand{display:flex;align-items:center;gap:10px;height:44px;margin-bottom:14px;padding-left:2px;font-weight:900;font-size:16px;white-space:nowrap}
+.logo{flex:none;width:36px;height:36px;border-radius:12px;background:var(--br);display:grid;place-items:center;color:#fff}
+#nav a{display:flex;align-items:center;gap:12px;height:46px;padding:0 13px;margin-bottom:4px;border-radius:12px;color:var(--mu);font-weight:700;cursor:pointer;white-space:nowrap;position:relative;transition:background .2s,color .2s}
+#nav a:hover{background:#EEF5FF;color:var(--bl)}
+#nav a.on{background:linear-gradient(135deg,#E6F0FF,#E0F8F0);color:var(--bl)}
+#nav a.on:before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--br)}
+.usr{margin-top:auto;display:flex;gap:10px;align-items:center;padding:8px;border-radius:14px;background:var(--bg);white-space:nowrap}
+.av{width:34px;height:34px;flex:none;border-radius:50%;background:var(--br);color:#fff;display:grid;place-items:center;font-weight:900}
+.usr small{display:block;color:var(--mu);font-size:11px;line-height:1.2}
+#main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{flex:none;height:64px;display:flex;align-items:center;gap:10px;padding:0 var(--pd);background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--ln)}
+.top h2{margin:0;font-size:18px;font-weight:900;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{position:relative;width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:12px;border:1px solid var(--ln);background:#fff;cursor:pointer;transition:.2s}
+.ib:hover{color:var(--bl);border-color:var(--bl)}
+.bdg{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--br);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+.top .bdg{position:absolute;top:-6px;right:-6px}
+#view{flex:1;min-height:0;display:flex;flex-direction:column}
+.pg{flex:1;min-height:0;display:flex;flex-direction:column;padding:18px var(--pd) 0;animation:in .4s cubic-bezier(.2,.8,.2,1) both}
+.pg.sy{display:block;overflow:auto;padding-bottom:30px}
+@keyframes in{from{opacity:0;transform:translateY(10px)}}
+.tb{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center}.tb>*{max-width:100%}
+.btn{height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--ln);background:#fff;display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+.btn:hover{border-color:var(--bl);color:var(--bl)}
+.btn.p{background:var(--br);color:#fff;border:0;box-shadow:0 8px 18px rgba(44,123,245,.28)}.btn.p:hover{color:#fff;transform:translateY(-1px)}
+.btn.d{color:#E5484D}.btn.d:hover{border-color:#E5484D;color:#E5484D}
+select.btn{appearance:none;padding-right:34px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236A7A94' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center}
+:focus-visible{outline:3px solid rgba(44,123,245,.4);outline-offset:2px}
+.sf{flex:1 1 220px;position:relative;min-width:180px}.sf .ic{position:absolute;left:12px;top:10px;color:var(--mu)}
+.sf input{width:100%;height:40px;padding:0 12px 0 40px;border-radius:12px;border:1px solid var(--ln);background:#fff;outline:0;transition:.2s}
+.sf input:focus{border-color:var(--bl);box-shadow:0 0 0 4px rgba(44,123,245,.12)}
+.sw{display:inline-flex;align-items:center;gap:8px;height:40px;cursor:pointer;font-weight:700;white-space:nowrap}.sw input{display:none}
+.sw i{width:40px;height:24px;border-radius:12px;background:#CFDBEB;position:relative;transition:.25s}
+.sw i:after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw input:checked+i{background:var(--br)}.sw input:checked+i:after{transform:translateX(16px)}
+.cnt{color:var(--mu);font-size:13px;margin:0 0 8px}
+.vs{position:relative;flex:1;min-height:0;overflow:auto;margin:0 calc(var(--pd)*-1);padding:6px var(--pd) 30px}
+.cd,.sr{position:relative;display:flex;gap:12px;padding:12px 14px 12px 17px;background:#fff;border:1px solid var(--ln);border-radius:16px;cursor:pointer;overflow:hidden;transition:transform .25s,box-shadow .25s,border-color .25s}
+.sr{align-items:center}
+.cd:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--c)}
+.cd:hover,.sr:hover{transform:translateY(-2px);box-shadow:var(--sh);border-color:#BBD4FA}
+.rs,.big{background:linear-gradient(150deg,#E4F0FF,#DDF8EE);display:grid;place-items:center;color:#8FB4E8;position:relative;overflow:hidden}
+.rs{width:112px;flex:none;border-radius:10px}
+.mb{position:absolute;left:8px;right:8px;bottom:8px;height:6px;border-radius:3px;overflow:hidden;display:flex;gap:1px}
+.ci{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:space-between}
+.tt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px;font-weight:700}
+.sb{color:var(--mu);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.w{white-space:normal}
+.rw{display:flex;align-items:center;gap:8px;min-width:0}
+.dc{background:var(--c);color:#fff;font-size:12px;font-weight:900;padding:2px 9px;border-radius:8px;white-space:nowrap}
+.bg{font-size:11px;font-weight:900;padding:2px 8px;border-radius:8px;color:#fff;white-space:nowrap}
+.bg.FC{background:linear-gradient(135deg,#FF6FB0,#FFB347)}.bg.AP{background:linear-gradient(120deg,#31C9F0,#FF7DCB,#FFD04A)}.bg.n{background:#EDF2F9;color:var(--mu)}
+.mv{font-size:20px;line-height:1;font-weight:900}
+.jk{width:62px;height:62px;flex:none;border-radius:14px;display:grid;place-items:center;color:rgba(255,255,255,.92)}
+.ut{font-size:11px;color:var(--bl);background:#EAF2FF;padding:2px 8px;border-radius:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd{width:11px;height:11px;border-radius:50%;border:2px solid var(--s);background:#fff;flex:none}.dd.on{background:var(--s)}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}.cg .cd{height:104px}
+.hero{padding:6px 0 4px}.hero h1{margin:0 0 6px;font-size:clamp(24px,3.6vw,38px);line-height:1.25;font-weight:900}
+.hero p{margin:0 0 18px;color:var(--mu);max-width:520px}.row{display:flex;flex-wrap:wrap;gap:10px}
+.jbar{display:flex;gap:3px;height:22px;margin:22px 0 10px}.jbar i{border-radius:11px;transform-origin:left;animation:sx 1.1s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sx{from{transform:scaleX(0)}}
+.lg2{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--mu);font-size:12px;font-weight:700}
+.jd{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.stl{display:flex;flex-wrap:wrap;gap:12px 36px;margin:20px 0 24px;padding:16px 0;border-block:1px solid var(--ln)}
+.stl b{display:block;font-size:30px;line-height:1.1;font-weight:900}.stl span{color:var(--mu);font-size:12px}
+h3{font-size:16px;font-weight:900;margin:0 0 12px}
+.tabs{display:inline-flex;background:#E7EFFA;border-radius:12px;padding:4px;gap:4px}
+.tabs button{border:0;background:transparent;padding:7px 14px;border-radius:9px;font-weight:700;color:var(--mu);cursor:pointer;transition:.2s}
+.tabs .on{background:#fff;color:var(--bl);box-shadow:0 2px 8px rgba(44,123,245,.15)}
+.ni{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--ln);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;transition:.25s}
+.ni:hover{transform:translateX(4px);border-color:#BBD4FA}
+.ni-i{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#E6F0FF,#DFF8EF);color:var(--bl)}
+.ni.e{cursor:default}.ni.e:hover{transform:none}.ni.e .ni-i{background:#FFF3DF;color:#E8890C}
+.cx{background:#fff;border:1px solid var(--ln);border-radius:18px;padding:18px;margin-bottom:14px}
+.set{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--ln)}
+#md{position:fixed;inset:0;background:rgba(20,33,61,.38);backdrop-filter:blur(6px);display:none;place-items:center;z-index:60;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+#md.on{display:grid;animation:fd .25s both}@keyframes fd{from{opacity:0}}
+.sh{background:#fff;width:min(940px,94vw);max-height:92%;overflow:auto;border-radius:24px;padding:22px;box-shadow:0 30px 80px rgba(20,33,61,.3);animation:pop .35s cubic-bezier(.2,.9,.3,1.1) both;position:relative}
+.sh.sm{width:min(440px,94vw)}@keyframes pop{from{opacity:0;transform:translateY(24px) scale(.97)}}
+.x{position:absolute;right:14px;top:14px;z-index:2}
+.dg{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px}
+.big{aspect-ratio:16/9;border-radius:16px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px;margin:12px 0}
+.kv{background:var(--bg);border-radius:14px;padding:10px 12px}.kv small{display:block;color:var(--mu);font-size:11px;font-weight:700;white-space:nowrap}.kv b{font-size:22px;line-height:1.3;font-weight:900}
+.jr{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;margin:6px 0;font-size:12px;font-weight:700}.jr b{text-align:right;font-size:14px}
+.jb{height:10px;border-radius:5px;background:#EAF1FB;overflow:hidden}.jb i{display:block;height:100%;border-radius:5px;animation:gw .9s both}@keyframes gw{from{width:0}}
+.ed{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-top:12px;padding:12px;background:var(--bg);border-radius:14px}
+.ed label{display:flex;flex-direction:column;font-size:11px;font-weight:700;color:var(--mu);gap:4px;flex:1 1 70px}
+.ed input{height:38px;border:1px solid var(--ln);border-radius:10px;padding:0 8px;width:100%}
+.sg{flex:1 1 100%;max-height:min(224px,34vh);overflow:auto;overscroll-behavior:contain;background:#fff;border:1px solid var(--ln);border-radius:12px;padding:4px}
+.sg button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:none;text-align:left;cursor:pointer}
+.sg button:hover,.sg button:focus-visible{background:var(--bg)}
+.sg b{font-size:13px;line-height:1.4}.sg small{color:var(--mu);font-size:11px}.sg>small{display:block;padding:8px 10px}
+.ch{width:100%;height:auto;display:block;margin:12px 0}
+.hr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--ln);font-size:13px}
+.dp{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--ln);border-radius:14px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.dp:hover{border-color:var(--bl);transform:translateX(4px)}.dp .sb{margin-left:auto}
+#tx,#lg{position:fixed;inset:0;display:none;place-items:center;padding:20px}
+#tx{z-index:90;background:rgba(243,248,254,.72);backdrop-filter:blur(8px)}#tx.on{display:grid}
+#lg{display:grid;z-index:120;background:radial-gradient(circle at 15% 8%,rgba(44,123,245,.22),transparent 45%),radial-gradient(circle at 88% 92%,rgba(20,194,155,.26),transparent 45%),#F8FBFF}
+.lc{background:#fff;border-radius:28px;padding:34px 28px;width:min(420px,100%);text-align:center;box-shadow:0 30px 70px rgba(44,123,245,.18);animation:pop .7s both}
+.sp{width:44px;height:44px;margin:0 auto 16px;border-radius:50%;border:4px solid #DCE8F8;border-top-color:var(--bl);border-right-color:var(--gr);animation:rot 1s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}
+.pb{height:8px;border-radius:4px;background:#E3EDF9;overflow:hidden;margin:14px 0 10px}.pb i{display:block;height:100%;width:0;background:var(--br)}
+#ts{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:100;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.t{background:#fff;border:1px solid var(--ln);border-left:4px solid var(--gr);border-radius:14px;padding:12px 16px;box-shadow:var(--sh);display:flex;gap:10px;align-items:center;max-width:min(380px,92vw);animation:in .4s both;cursor:pointer}
+#scrim{display:none}
+.sh.dt{width:min(620px,94vw)}
+.inf{margin:14px 0}.inf>div{display:flex;gap:12px;padding:8px 0;border-top:1px solid var(--ln);font-size:13px}.inf small{flex:none;width:92px;color:var(--mu);font-weight:700}.inf span{min-width:0;flex:1}.nw{white-space:nowrap;margin-right:10px}
+.lvt{margin:0 0 26px}.lvr{display:grid;grid-template-columns:54px repeat(3,minmax(0,1fr));gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--ln)}.lvr>b,.lvr>div b{font-weight:900}.lvh{border-top:0;color:var(--mu);font-size:12px;font-weight:700}
+#tl{list-style:none;margin:0 0 10px;padding:0}#tl li{display:grid;grid-template-columns:22px 1fr auto;gap:2px 10px;align-items:center;padding:7px 0;color:var(--mu);font-size:13px;font-weight:700}#tl em{font-size:12px}
+.si{width:18px;height:18px;border-radius:50%;border:2px solid #CFDBEB;position:relative}
+#tl .on,#tl .ok{color:var(--ink)}#tl .on .si{border-color:var(--bl);border-top-color:transparent;animation:rot .8s linear infinite}
+#tl .ok .si{background:var(--gr);border-color:var(--gr)}#tl .ok .si:after{content:"";position:absolute;left:4px;top:2px;width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.sbp{grid-column:2/4;height:5px;border-radius:3px;background:#E3EDF9;overflow:hidden;display:none}#tl .on .sbp{display:block}.sbp i{display:block;height:100%;width:0;background:var(--br)}
+.jk{position:relative;overflow:hidden}.jk img,.rs img,.big img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.big img{object-fit:contain}.mb,.big>div{z-index:1}
+.cidi{width:100%;height:46px;margin-bottom:12px;padding:0 14px;border:1px solid var(--ln);border-radius:12px;outline:0;background:#fff}.cidi:focus{border-color:var(--bl);box-shadow:0 0 0 4px rgba(44,123,245,.12)}
+.ni{flex-wrap:wrap}.ni .ci{flex:1 1 150px}.usr>div+div{min-width:0}.usr b,.usr small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.t.er{border-left-color:#E5484D}
+@media (max-width:820px),(orientation:portrait){
+:root{--pd:14px}
+#side{position:fixed;left:0;top:0;bottom:0;width:260px!important;transform:translateX(-104%);box-shadow:var(--sh);padding-top:calc(14px + env(safe-area-inset-top,0px));padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+#app.open #side{transform:none}
+#scrim{display:block;position:fixed;inset:0;background:rgba(20,33,61,.35);z-index:25;opacity:0;pointer-events:none;transition:.3s}
+#app.open #scrim{opacity:1;pointer-events:auto}
+.top{height:58px}.sh{width:100%;height:100%;max-height:100%;border-radius:0;padding:18px 16px}.sh.sm{height:auto;width:min(440px,92vw);border-radius:22px}
+.dg{grid-template-columns:minmax(0,1fr);gap:16px}#ts{left:14px;right:14px;align-items:stretch}.t{max-width:none}.sh.dt{width:100%}#app.col #side{visibility:visible;padding-left:12px;padding-right:12px;border-right-width:1px}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+#tx .lc{max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow:auto}
+#pv{display:flex;gap:12px;align-items:center;margin:0 0 12px;padding:10px;background:var(--bg);border-radius:14px}
+#pc{width:150px;max-width:46%;height:auto;flex:none;border-radius:8px;background:#fff;box-shadow:0 2px 8px rgba(20,33,61,.15)}
+#pv>div{min-width:0;flex:1}#pl{gap:4px 12px;font-size:11px}
+#oi{position:absolute;inset:0}
+#tx .lc{position:relative}.ta{margin-top:12px}
+.sc{flex-direction:column;align-items:stretch;gap:8px;width:min(360px,92vw);cursor:default}.sc .pb{margin:0}.sc .btn{height:34px;padding:0 12px}.sc .sp{flex:none;width:20px;height:20px;margin:0;border-width:3px}
+.cl{display:block;margin:0 0 6px;font-size:13px;font-weight:900}.cmpv .inf{margin:10px 0 0}.cmpv .inf small{width:76px}.cmpv .inf .eq{color:#0E9F7E;font-weight:700}
+@media (max-width:820px),(orientation:portrait){.sc{width:auto}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-4L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4l2-2M20 20v-5h-5"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+<symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M4 12h16"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18v.5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v2a3 3 0 0 0 3 3M16 6h4v2a3 3 0 0 1-3 3M12 13v4M8 20h8"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></symbol>
+</defs></svg>
+<div id="app"><aside id="side"><div class="brand"><div class="logo"><svg class="ic"><use href="#i-music"/></svg></div><span>SEKAI RESULT</span></div><nav id="nav"></nav>
+<div class="usr"><div class="av" id="uav"></div><div><b id="unm"></b><small id="uem">Googleアカウント</small></div></div></aside><div id="scrim" data-act="side"></div>
+<div id="main"><header class="top"><button class="ib" data-act="side" aria-label="メニュー"><svg class="ic"><use href="#i-menu"/></svg></button><h2 id="ttl"></h2>
+<select class="btn" id="bs" aria-label="ミス数の基準"><option value="FC">FC基準</option><option value="AP">AP基準</option><option value="TA">大会基準</option></select>
+<button class="ib" data-act="go" data-v="notif" aria-label="通知"><svg class="ic"><use href="#i-bell"/></svg><em class="bdg nbd"></em></button></header><main id="view"></main></div></div>
+<div id="md"></div><div id="ts"></div>
+<div id="tx"><div class="lc" style="padding:24px;width:min(440px,92vw);text-align:left"><div class="rw"><div class="sp" style="margin:0;width:30px;height:30px;border-width:3px"></div><b id="tm" style="flex:1;min-width:0"></b><b id="tp" style="font-size:24px;font-weight:900">0%</b></div><div class="pb"><i id="tb"></i></div><div id="pv" hidden><canvas id="pc"></canvas><div><b class="sb" id="pn" style="display:block;margin-bottom:6px;color:var(--ink)"></b><div class="lg2" id="pl"></div></div></div><ul id="tl"></ul><div class="row ta" id="ta" hidden><button class="btn" data-act="tmin"><svg class="ic"><use href="#i-x"/></svg>閉じる（裏で続行）</button><button class="btn d" id="tpz" data-act="tpz"><svg class="ic"><use href="#i-pause"/></svg>中断</button></div><small class="sb w" style="display:block">処理中は操作できません。中断されても、次回起動時に自動で整合します。</small></div></div>
+<div id="lg"><div class="lc"><div class="logo" style="margin:0 auto 16px;width:64px;height:64px;border-radius:20px"><svg class="ic" style="width:30px;height:30px"><use href="#i-music"/></svg></div><h1 style="margin:0 0 8px;font-size:26px;font-weight:900">SEKAI RESULT</h1><p class="sb w" style="margin:0 0 24px;font-size:14px">Googleアカウントでログインすると、ドライブのリザルト画像を読み込みます。</p><button class="btn p" data-act="login" style="width:100%;justify-content:center;height:48px"><b style="font-size:18px">G</b>Googleでログイン</button></div></div>
+<input type="file" id="fi" accept="image/*" multiple hidden>
+<script>
+const $=s=>document.querySelector(s),ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`,mob=()=>matchMedia('(max-width:820px),(orientation:portrait)').matches;
+const D=[['EASY','#66DD11'],['NORMAL','#33BBEE'],['HARD','#FFAA00'],['EXPERT','#EE4466'],['MASTER','#BB33EE'],['APPEND','linear-gradient(135deg,#FF9BD8,#9D7CFF)','#E27FD0']].map(a=>({n:a[0],c:a[1],s:a[2]||a[1]}));
+const J=[['PERFECT','linear-gradient(90deg,#46D5F0,#FF8BD2,#FFD54A)','pf'],['GREAT','#FF8AC4','gr'],['GOOD','#5BA8FF','go'],['BAD','#5CCB8A','ba'],['MISS','#A3AEC2','mi']];
+const BS={FC:'FC基準',AP:'AP基準',TA:'大会基準'},UN=['バーチャル・シンガー','Leo/need','MORE MORE JUMP!','Vivid BAD SQUAD','ワンダーランズ×ショウタイム','25時、ナイトコードで。','その他'];
+const FN='SekaiResults',DBU='https://sekai-world.github.io/sekai-master-db-diff/',DV='https://www.googleapis.com/drive/v3/files',SC='https://www.googleapis.com/auth/drive',CID_DEFAULT='888821664633-osk51l7ooscsfdlp0qiqct7tcpcv65ij.apps.googleusercontent.com';/* ←OAuthクライアントIDを直接設定する場合はここに記入（ログイン画面での入力も可） */
+const LS=localStorage,gj=k=>{try{return JSON.parse(LS.getItem(k))}catch(e){return null}},cid=()=>LS.getItem('sr_cid')||CID_DEFAULT;
+const CN=['FC基準','AP基準','大会基準','コンボ数'],EM={title:'楽曲タイトルを特定できません',diff:'難易度を特定できません',lv:'難易度とレベルが一致しません',num:'判定数・コンボ数を読み取れません',sum:'判定数の合計がノーツ数と一致しません',api:'OCRの実行に失敗しました',unk:'楽曲情報が見つかりません'};
+let S=[],SM=new Map,R=[],ER=[],N=gj('sr_n')||[],US={n:'',e:''},TKN='',FID='',TX=0,TXN=1,TXP=[],TXM=0,TXT=0,TXL='',PZ=0,PS='',RU=[];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let JB=0;const JX=new Set,JH=[['wsrv.nl/?w=160&h=160&fit=cover&output=webp&q=70&url=storage.sekai.best/sekai-jp-assets/music/jacket/{}/{}.webp','no-referrer'],['storage.sekai.best/sekai-jp-assets/music/jacket/{}/{}.webp','no-referrer'],['storage.sekai.best/sekai-jp-assets/music/jacket/{}/{}.webp','strict-origin-when-cross-origin'],['assets.unipjsk.com/startapp/music/jacket/{}/{}.webp','no-referrer']];
+const JU=(id,k=JB)=>{const n='jacket_s_'+String(id).padStart(3,'0');return'https://'+JH[k][0].split('{}').join(n)},
+jkE=i=>{const k=(+i.dataset.j)+1;if(!JH[k]){JX.add(+i.dataset.i);return i.remove()}i.dataset.j=k;i.referrerPolicy=JH[k][1];i.src=JU(i.dataset.i,k)};
+const tgs=s=>s.u.map(i=>UN[i]).join(' / '),sv=()=>LS.setItem('sr_n',JSON.stringify(N.slice(0,200)));
+const JK=(s,x='')=>`<div class="jk" style="background:${jk(s.id)};${x}">${ic('music')}${JX.has(s.id)?'':`<img src="${JU(s.id)}" data-i="${s.id}" data-j="${JB}" alt="" referrerpolicy="${JH[JB][1]}" onload="JB=+this.dataset.j" onerror="jkE(this)">`}</div>`;
+const thm=(r,n)=>r.th?`<img src="${r.th.replace(/=s\d+(-c)?$/,'=s'+n)}" alt="" referrerpolicy="no-referrer">`:ic('image');
+const etx=e=>{const[c,p]=String(e).split(':');return c=='dup'?`重複の可能性：リザルト・撮影日時・画面サイズ・画像が近似（一致率 ${p}%）`:`読み取りエラー：${EM[c]||'不明なエラー'}${+p?`（類似度 ${p}%）`:''}`};
+const mkE=(f,e)=>({u:f.id,k:'err',f:esc(f.name),t:Date.parse(f.createdTime),tx:etx(e),e:String(e),fm:f});
+/* ---- 認証・Drive ---- */
+const gw=()=>new Promise((ok,ng)=>{let n=0;(function f(){window.google&&google.accounts?ok():++n>60?ng(new Error('Googleのスクリプトを読み込めませんでした')):setTimeout(f,100)})()});
+async function auth(){await gw();return new Promise((ok,ng)=>{google.accounts.oauth2.initTokenClient({client_id:cid(),scope:SC,callback:r=>{if(r.access_token){TKN=r.access_token;LS.setItem('sr_li','1');ok()}else ng(new Error(r.error_description||r.error||'認証に失敗しました'))},error_callback:e=>ng(new Error(e&&e.type=='popup_closed'?'ログインがキャンセルされました':'ログインに失敗しました（'+((e&&e.type)||'error')+'）'))}).requestAccessToken({prompt:''})})}
+async function api(u,o={},r=0){const x=await fetch(u,{...o,headers:{...o.headers,Authorization:'Bearer '+TKN}});
+ if(x.status==401&&!r){await auth();return api(u,o,1)}
+ if(!x.ok){const e=await x.text().catch(()=>'');throw new Error(`通信エラー(${x.status}) ${e.slice(0,140)}`)}return x}
+const dj=async(u,o)=>(await api(u,o)).json(),pat=(id,b)=>api(`${DV}/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+async function folder(){const q=encodeURIComponent(`name='${FN}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`),l=await dj(`${DV}?q=${q}&fields=files(id)`);
+ return l.files.length?l.files[0].id:(await dj(DV,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:FN,mimeType:'application/vnd.google-apps.folder'})})).id}
+const FL='nextPageToken,files(id,name,createdTime,modifiedTime,thumbnailLink,appProperties,imageMediaMetadata(time,width,height))';
+async function lst(){let a=[],p='';const q=encodeURIComponent(`'${FID}' in parents and trashed=false and mimeType contains 'image/'`);
+ do{const j=await dj(`${DV}?q=${q}&pageSize=1000&fields=${encodeURIComponent(FL)}${p?'&pageToken='+p:''}`);a=a.concat(j.files);p=j.nextPageToken}while(p);return a}
+async function upl(f){const m=new FormData();m.append('metadata',new Blob([JSON.stringify({name:f.name,parents:[FID],modifiedTime:new Date(f.lastModified||Date.now()).toISOString()})],{type:'application/json'}));m.append('file',f);
+ await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',body:m})}
+/* ---- マスターデータ ---- */
+async function master(){const g=async n=>{const x=await fetch(DBU+n);if(!x.ok)throw new Error('楽曲情報を取得できません（'+n+'）');return x.json()},[m,d,t]=await Promise.all([g('musics.json'),g('musicDifficulties.json'),g('musicTags.json')]),
+ DM={easy:0,normal:1,hard:2,expert:3,master:4,append:5},TG=['vocaloid','light_music_club','idol','street','theme_park','school_refusal','other'],mp=new Map,tg=new Map;
+ d.forEach(x=>{const k=DM[x.musicDifficulty];if(k==null)return;const a=mp.get(x.musicId)||mp.set(x.musicId,{lv:Array(6).fill(0),nt:Array(6).fill(0)}).get(x.musicId);a.lv[k]=x.playLevel;a.nt[k]=x.totalNoteCount});
+ t.forEach(x=>{const k=TG.indexOf(x.musicTag);if(k<0)return;(tg.get(x.musicId)||tg.set(x.musicId,new Set).get(x.musicId)).add(k)});
+ S=m.filter(x=>mp.has(x.id)).sort((a,b)=>a.id-b.id).map((x,i)=>{const a=mp.get(x.id),u=[...(tg.get(x.id)||[])];return{id:x.id,i,t:x.title,pr:x.pronunciation||'',ly:x.lyricist||'',co:x.composer||'',ar:x.arranger||'',u:u.length?u:[6],rel:x.publishedAt||0,lv:a.lv,nt:a.nt}});
+ SM=new Map(S.map(s=>[s.id,s.i]))}
+/* ---- 記録の保存形式（画像のappProperties） ---- */
+const enc=r=>[S[r.s].id,r.d,r.pf,r.gr,r.go,r.ba,r.mi,r.cb,Math.floor(r.ts/1000)].join('|');
+function tsOf(f){const t=f.imageMediaMetadata&&f.imageMediaMetadata.time,m=t&&t.match(/(\d{4}):(\d\d):(\d\d) (\d\d):(\d\d):(\d\d)/);
+ if(m)return new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5],+m[6]).getTime();
+ const n=f.name.match(/(20\d\d)(\d\d)(\d\d)[-_ T]?(\d\d)(\d\d)(\d\d)/);if(n)return new Date(+n[1],n[2]-1,+n[3],+n[4],+n[5],+n[6]).getTime();
+ return Date.parse(f.modifiedTime)}
+function dec(f){const p=f.appProperties||{},a=(p.r||'').split('|').map(Number),i=SM.get(a[0]);if(a.length<9||i==null||a.some(isNaN)||!S[i].lv[a[1]])return null;
+ const s=S[i],d=a[1],h=(p.h||'0x0|').split(/[x|]/);
+ return{id:f.id,nm:f.name,fm:f,s:i,d,lv:s.lv[d],nt:s.nt[d],pf:a[2],gr:a[3],go:a[4],ba:a[5],mi:a[6],cb:a[7],ts:a[8]*1000,ad:Date.parse(f.createdTime),th:f.thumbnailLink||'',W:+h[0],H:+h[1],h:h[2]||''}}
+async function load(){const fs=await lst(),td=[];R=[];ER=[];
+ fs.forEach(f=>{const p=f.appProperties||{};if(p.r){const r=dec(f);r?R.push(r):ER.push(mkE(f,'unk:0'))}else if(p.e)ER.push(mkE(f,p.e));else td.push(f)});bld();return td}
+async function commit(f,o){if(o.rec)await pat(f.id,{appProperties:{r:enc(o.rec),h:`${o.rec.W}x${o.rec.H}|${o.rec.h}`,e:null}});else if(!o.tmp)await pat(f.id,{appProperties:{e:o.err}})}
+/* ---- 類似度・重複判定 ---- */
+const nz=t=>(t||'').normalize('NFKC').toLowerCase().replace(/[\s"'`´‘’“”・.,:;!?~\-_()\[\]<>\/\\|*★☆♪♡♥。、「」『』【】]/g,'');
+function lev(a,b){const m=a.length,n=b.length;if(!m||!n)return Math.max(m,n);let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]==b[j-1]?0:1));p=c}return p[n]}
+const sim=(a,b)=>{a=nz(a);b=nz(b);const L=Math.max(a.length,b.length);return L?1-lev(a,b)/L:0},nums=t=>(t.normalize('NFKC').match(/\d+/g)||[]).map(Number),mt4=r=>[r.go+r.ba+r.mi,r.gr+r.go+r.ba+r.mi,r.nt*3-3*r.pf-2*r.gr-r.go,-r.cb];
+const hs=(a,b)=>{if(!a||a.length!=b.length)return 0;let n=0;for(let i=0;i<a.length;i++){let x=parseInt(a[i],16)^parseInt(b[i],16);while(x){n+=x&1;x>>=1}}return 1-n/(a.length*4)};
+function dupOf(x,pool){let b=0,m=null;pool.forEach(r=>{if(r.s!=x.s||r.d!=x.d||!['pf','gr','go','ba','mi','cb'].every(k=>r[k]==x[k]))return;
+ const tm=[r.ts,r.fm?tsOf(r.fm):NaN].some(t=>Math.abs(t-x.ts)<2000),sz=r.W>0&&r.H>0&&x.W>0&&x.H>0,hv=!!r.h&&!!x.h&&r.h.length==x.h.length,
+  v=(35+(tm?30:0)+(sz&&r.W==x.W&&r.H==x.H?10:0)+(hv?25*hs(r.h,x.h):0))/(65+(sz?10:0)+(hv?25:0));if(v>b){b=v;m=r}});return b>=.75-1e-9?{p:Math.round(b*100),id:m.id}:0}
+function otsu(g){const h=new Uint32Array(256);for(let i=0;i<g.length;i++)h[g[i]]++;const t=g.length;let sm=0,sB=0,wB=0,mx=-1,th=127;for(let i=0;i<256;i++)sm+=i*h[i];
+ for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=t-wB;if(!wF)break;sB+=i*h[i];const d=sB/wB-(sm-sB)/wF,v=wB*wF*d*d;if(v>mx){mx=v;th=i}}return th}
+function prep(bm,x,y,w,h){x=Math.max(0,Math.round(x));y=Math.max(0,Math.round(y));w=Math.min(bm.width-x,Math.round(w));h=Math.min(bm.height-y,Math.round(h));if(w<4||h<4)return'';
+ const k=Math.max(2,Math.min(4,Math.round(240/h))),c=document.createElement('canvas');c.width=w*k;c.height=h*k;const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingQuality='high';g.drawImage(bm,x,y,w,h,0,0,c.width,c.height);
+ const im=g.getImageData(0,0,c.width,c.height),d=im.data,n=d.length/4,gr=new Uint8Array(n);for(let i=0;i<n;i++)gr[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];
+ const t=otsu(gr);let bk=0;for(let i=0;i<n;i++)if(gr[i]<=t)bk++;const iv=bk>n/2;
+ for(let i=0;i<n;i++){let v=gr[i]>t?255:0;if(iv)v=255-v;d[i*4]=d[i*4+1]=d[i*4+2]=v;d[i*4+3]=255}
+ g.putImageData(im,0,0);const p=12,o=document.createElement('canvas');o.width=c.width+p*2;o.height=c.height+p*2;const q=o.getContext('2d');q.fillStyle='#fff';q.fillRect(0,0,o.width,o.height);q.drawImage(c,p,p);return o.toDataURL('image/png').split(',')[1]}
+function ah(bm){const c=document.createElement('canvas');c.width=16;c.height=8;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(bm,0,0,16,8);const d=g.getImageData(0,0,16,8).data,v=[];
+ for(let i=0;i<128;i++)v.push(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2]);const m=v.reduce((a,b)=>a+b,0)/128;let o='';
+ for(let i=0;i<128;i+=4)o+=v.slice(i,i+4).reduce((a,x,j)=>a+((x>m?1:0)<<(3-j)),0).toString(16);return o}
+let ML,OU=[],EK=0;const RC=[['リザルト','#2C7BF5'],['コンボ','#14C29B'],['タイトル','#FFAA00'],['難易度','#EE4466'],['レベル','#BB33EE']];
+function pv(bm,rg,nm){const c=$('#pc'),k=Math.min(1,320/bm.width);c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);const g=c.getContext('2d');g.drawImage(bm,0,0,c.width,c.height);
+ if(rg)rg.forEach((r,i)=>{const[x,y,w,h]=r.map(v=>v*k);g.fillStyle=RC[i][1]+'55';g.fillRect(x,y,w,h);g.lineWidth=2;g.strokeStyle=RC[i][1];g.strokeRect(x,y,w,h)});
+ if(nm!=null)$('#pn').textContent=nm;$('#pl').innerHTML=rg?RC.map(a=>`<span><i class="jd" style="background:${a[1]}"></i>${a[0]}</span>`).join(''):'';$('#pv').hidden=false}
+async function pvF(f){try{const b=await createImageBitmap(f);pv(b,0,f.name);b.close()}catch(e){$('#pv').hidden=true}}
+async function eim(u,t='#ei',q){const k=EK;try{const b=await(await api(`${DV}/${u}?alt=media`)).blob(),i=$(t);if(k!=EK||!i||!$('#md').classList.contains('on'))return;const o=URL.createObjectURL(b);OU.push(o);i.innerHTML=`<img src="${o}" alt="">`}catch(e){const i=$(t);k==EK&&i&&!q&&(i.textContent='画像を読み込めませんでした')}}
+const tl=t=>{const d=new Date(t);return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+'T'+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds())};
+const mS=()=>S.find(s=>ML(s)==$('#m_s').value.trim());
+const mF=o=>{const c={};S.forEach(s=>c[s.t]=(c[s.t]||0)+1);ML=s=>c[s.t]>1?`${s.t} [${s.id}]`:s.t;
+ return`<div class="ed" id="mf" data-md="${o.md}" data-id="${o.id}" data-d="${o.d}"${o.md=='m'?' style="margin:0"':''}${o.hd?' hidden':''}><label style="flex:1 1 100%">楽曲タイトル<input id="m_s" type="text" value="${o.s<0?'':esc(ML(S[o.s]))}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="タイトルを入力して候補から選択"></label><div class="sg" id="m_l" hidden></div><label style="flex:1 1 100%">難易度<select class="btn" id="m_d" style="width:100%"></select></label>${[['pf','PERFECT'],['gr','GREAT'],['go','GOOD'],['ba','BAD'],['mi','MISS'],['cb','コンボ']].map(a=>`<label>${a[1]}<input id="m_${a[0]}" type="number" min="0" inputmode="numeric" value="${o[a[0]]}"></label>`).join('')}<div class="kv" style="flex:1 1 100%;background:#fff"><small>判定数の合計 / ノーツ数</small><b id="m_sm">-</b></div><label style="flex:1 1 100%">撮影日時<input id="m_ts" type="datetime-local" step="1" value="${tl(o.ts)}"></label><button class="btn p" data-act="msave" style="margin-left:auto">${ic('check')}${o.md=='m'?'登録':'保存'}</button></div>`};
+function mfU(id){const f=$('#mf'),s=mS(),d=$('#m_d'),sid=s?s.id:'',q=nz($('#m_s').value),v=k=>Math.max(0,Math.floor(+$('#m_'+k).value)||0);
+ if(d.dataset.s!=sid){const pd=d.value!==''?d.value:f.dataset.d;d.dataset.s=sid;d.innerHTML=s?D.map((x,i)=>s.lv[i]?`<option value="${i}">${x.n} Lv.${s.lv[i]}</option>`:'').join(''):'<option value="">先に楽曲を選択してください</option>';if(s&&[...d.options].some(x=>x.value==pd))d.value=pd}
+ const nt=s&&d.value!==''?s.nt[+d.value]:0;
+ if(id=='m_pf')f.dataset.m=1;else if(!f.dataset.m&&nt&&id!='init'&&id!='m_cb'&&id!='m_ts')$('#m_pf').value=Math.max(0,nt-v('gr')-v('go')-v('ba')-v('mi'));
+ const sm=v('pf')+v('gr')+v('go')+v('ba')+v('mi'),e=$('#m_sm'),l=$('#m_l'),a=s||!q?[]:S.filter(x=>nz(ML(x)).includes(q)||nz(x.pr).includes(q)).sort((x,y)=>nz(ML(y)).startsWith(q)-nz(ML(x)).startsWith(q)).slice(0,40);
+ e.textContent=nt?`${sm} / ${nt}`:'-';e.style.color=nt&&sm!=nt?'#E5484D':'';
+ l.hidden=!!s||!q;l.innerHTML=a.length?a.map(x=>`<button type="button" data-act="mpick" data-s="${x.i}"><b>${esc(ML(x))}</b><small>${esc(tgs(x))}</small></button>`).join(''):'<small>該当する楽曲がありません</small>'}
+/* ---- OCR（領域切り出し→拡大・二値化・反転→Tesseract.js：無料・ブラウザ内で実行） ---- */
+let TW;const tw=()=>TW||(TW=(async()=>{if(!window.Tesseract)throw new Error('OCRエンジン（Tesseract.js）を読み込めませんでした。通信状況を確認して再読み込みしてください');
+ return Promise.all([Tesseract.createWorker('eng'),Tesseract.createWorker('jpn+eng')])})().catch(x=>{TW=0;throw x}));
+async function vis(a){const[e,j]=await tw(),M=[[e,6],[e,6],[j,7],[e,7],[e,7]],o=[];
+ for(let i=0;i<a.length;i++){const[w,m]=M[i];await w.setParameters({tessedit_pageseg_mode:String(m)});o.push(((await w.recognize('data:image/png;base64,'+a[i])).data.text)||'')}return o}
+async function read(bm){const W=bm.width,H=bm.height,s=Math.min(W/1920,H/1080),ox=(W-1920*s)/2,oy=Math.max(0,(H-1080*s)/2),
+ rg=[[210,580,390,325,1],[650,570,340,90,1],[370,20,600,70,0],[370,95,200,65,0],[580,95,190,65,0]].map(([x,y,w,h,o])=>[ox+x*s,(o?oy:0)+y*s,w*s,h*s]),a=rg.map(r=>prep(bm,...r));pv(bm,rg);
+ if(a.some(x=>!x))return{err:'num:0'};
+ const[tr,tc,tt,td,tl]=await vis(a);let si=-1,tv=0;S.forEach((q,i)=>{const x=sim(tt,q.t);if(x>tv){tv=x;si=i}});
+ if(si<0||tv<.6)return{err:'title:'+Math.round(tv*100)};
+ const q=S[si],L=nums(tl)[0],dt=td.replace(/[^A-Za-z]/g,'');let d=-1,dv=0;D.forEach((x,i)=>{if(!q.lv[i])return;const v=sim(dt,x.n);if(v>dv){dv=v;d=i}});if(dv<.5)d=-1;
+ const c=q.lv.map((x,i)=>x&&x==L?i:-1).filter(i=>i>=0);
+ if(d<0){if(c.length!=1)return{err:'diff:0'};d=c[0]}else if(L&&q.lv[d]!=L){if(dv<.8&&c.length==1)d=c[0];else return{err:'lv:0'}}
+ let n=nums(tr);if(n.length<5)return{err:'num:0'};n=n.slice(-5);const[pf,gr,go,ba,mi]=n,cb=nums(tc)[0];
+ if(cb==null||cb>q.nt[d]||pf+gr+go+ba+mi!=q.nt[d])return{err:(cb==null||cb>q.nt[d]?'num':'sum')+':0'};
+ return{rec:{s:si,d,lv:q.lv[d],nt:q.nt[d],pf,gr,go,ba,mi,cb}}}
+async function proc(f){const b=await(await api(`${DV}/${f.id}?alt=media`)).blob();let bm;try{bm=await createImageBitmap(b)}catch(e){return{err:'num:0'}}
+ try{pv(bm,0,f.name);const o=await read(bm);if(o.err)return o;const x={...o.rec,id:f.id,nm:f.name,fm:f,ts:Math.floor(tsOf(f)/1000)*1000,ad:Date.parse(f.createdTime),th:f.thumbnailLink||'',W:bm.width,H:bm.height,h:ah(bm)},p=dupOf(x,R.filter(r=>r.id!=f.id));return p?{err:'dup:'+p.p+':'+p.id}:{rec:x}}finally{bm.close()}}
+async function redo(f,keep){const o=await proc(f);
+ if(o.rec){await commit(f,o);R=R.filter(x=>x.id!=f.id);ER=ER.filter(x=>x.u!=f.id);R.push(o.rec);bld()}
+ else if(!keep){await commit(f,o);ER=ER.filter(x=>x.u!=f.id);ER.push(mkE(f,o.err))}return o}
+/* ---- トランザクション（処理中は操作不能・中断しても次回起動時に整合） ---- */
+function txS(i,q,l){TXP[i]=q;for(let j=0;j<i;j++)TXP[j]=1;
+ for(let j=0;j<TXN;j++){const x=$('#ps'+j);if(!x)continue;const p=TXP[j]||0;x.className=p>=1?'ok':j==i?'on':'';x.children[2].textContent=p>=1?'完了':j==i?(l||''):'';x.children[3].firstChild.style.width=Math.min(1,p)*100+'%'}
+ const t=TXP.slice(0,TXN).reduce((a,b)=>a+(b||0),0)/TXN;$('#tb').style.width=t*100+'%';$('#tp').textContent=Math.floor(t*100)+'%';TXT=t;TXL=l||'';TXM&&scU()}
+async function run(m,sp,fn,sy){if(TX)return 0;TX=1;TXM=0;TXN=sp.length;TXP=[];LS.setItem('sr_tx',JSON.stringify({m,t:Date.now()}));$('#tm').textContent=m;$('#ta').hidden=!sy;$('#tpz').disabled=false;$('#tpz').innerHTML=ic('pause')+'中断';
+ $('#tl').innerHTML=sp.map((x,i)=>`<li id="ps${i}"><i class="si"></i><span>${x}</span><em></em><div class="sbp"><i></i></div></li>`).join('');$('#pv').hidden=true;$('#tx').classList.add('on');txS(0,0);let ok=1;
+ try{await fn();txS(TXN-1,1);await new Promise(r=>setTimeout(r,350))}catch(e){ok=0;console.error(e);toast(e.message||'エラーが発生しました',null,1)}
+ LS.removeItem('sr_tx');TX=0;TXM=0;$('#pv').hidden=true;$('#tx').classList.remove('on');scU();return ok}
+function scU(){let c=$('#sc');const on=TX&&TXM,ps=!TX&&PS;if(!on&&!ps){c&&c.remove();return}
+ if(!c){c=document.createElement('div');c.id='sc';c.className='t sc';c.innerHTML=`<div class="rw"><div class="sp" id="scs"></div><b class="tt" id="sct" style="flex:1"></b></div><div class="pb" id="scp"><i id="scb"></i></div><div class="row"><button class="btn" id="sc1" data-act="tmax">${ic('chev')}詳細</button><button class="btn d" id="sc2" data-act="tpz">${ic('pause')}中断</button><button class="btn p" id="sc3" data-act="sync">${ic('play')}続きから再開</button><button class="btn" id="sc4" data-act="scx">${ic('x')}閉じる</button></div>`;$('#ts').prepend(c)}
+ $('#scs').hidden=$('#scp').hidden=!on;$('#sc1').hidden=$('#sc2').hidden=!on;$('#sc3').hidden=$('#sc4').hidden=!!on;
+ if(on){const p=Math.floor(TXT*100);$('#sct').textContent=PZ?'中断しています…':`同期中 ${p}%${TXL?'　'+TXL:''}`;$('#scb').style.width=p+'%';$('#sc2').disabled=!!PZ}
+ else $('#sct').textContent=`同期を中断しました（${PS}）`}
+async function sync(up){if(TX)return;const u=[...(up||[]),...RU];RU=[];PZ=0;PS='';scU();const sp=['Googleドライブに接続','フォルダの差分を検出'].concat(u.length?['画像をアップロード']:[],['OCRで解析','自己ベストを照合']),iO=u.length?3:2;let nn=0,ne=0;
+ const ok=await run('Googleドライブと同期しています',sp,async()=>{
+  txS(0,.2);if(!TKN)await auth();if(!S.length){txS(0,.5,'楽曲情報を取得');await master()}FID=await folder();
+  for(let k=0;k<u.length;k++){if(PZ){RU=u.slice(k);break}txS(2,k/u.length,`${k+1} / ${u.length} 枚`);try{await pvF(u[k]);await upl(u[k])}catch(e){RU=u.slice(k);PS='未アップロード '+RU.length+' 枚';throw e}}if(RU.length){PS='未アップロード '+RU.length+' 枚';return}
+  txS(1,.3);const td=await load();td.sort((a,b)=>tsOf(a)-tsOf(b));
+  const first=!R.length||LS.getItem('sr_f')=='1',BM=new Map,add=r=>{const k=r.s+'-'+r.d,v=mt4(r),b=BM.get(k);BM.set(k,b?b.map((x,i)=>Math.min(x,v[i])):v);return[b,v]};R.forEach(r=>add(r));if(first)LS.setItem('sr_f','1');
+  if(td.length){txS(iO,0,'OCRエンジンを準備中');await tw()}
+  for(let i=0;i<td.length;i++){if(PZ){PS='残り '+(td.length-i)+' 枚';break}const f=td[i];txS(iO,i/td.length,`${i+1} / ${td.length} 枚`);let o;
+   try{o=await proc(f)}catch(e){if(/\(40[13]\)/.test(e.message))throw e;o={err:'api:0',tmp:1}}
+   if(o.rec){await commit(f,o);const[b,v]=add(o.rec);R.push(o.rec);bld();
+    const t=first?'':b?v.map((x,j)=>x<b[j]?`${CN[j]} ${Math.abs(b[j])} → ${Math.abs(x)}`:'').filter(Boolean).join(' / '):'初回記録';
+    if(t){N.unshift({u:Date.now()+i,k:'rec',id:o.rec.id,t:Date.now(),tx:t});sv();nn++}}
+   else{await commit(f,o);ER.push(mkE(f,o.err));ne++}}
+  txS(iO+1,.5);bld();N=N.filter(n=>R.some(r=>r.id==n.id));sv();if(!PS)LS.removeItem('sr_f')},1);
+ view();if(!ok)return;
+ if(nn)toast(`自己ベストを${nn}件更新しました。タップして確認`,'notif');
+ if(ne)toast(`読み取りエラー・重複が${ne}件あります。タップして確認`,'notif',1,()=>{st.nt='err'})}
+async function boot(){try{const a=await dj('https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress)');US={n:a.user.displayName||'ユーザー',e:a.user.emailAddress||''}}catch(e){toast(e.message,null,1);return}
+ $('#unm').textContent=US.n;$('#uem').textContent=US.e;$('#uav').textContent=[...US.n][0]||'U';$('#lg').hidden=true;
+ if(LS.getItem('sr_tx'))toast('前回の処理が中断されました。ドライブの状態に合わせて整合します');await sync()}
+let G;const bld=()=>{G=new Map();R.forEach(r=>{const k=r.s*10+r.d;(G.get(k)||G.set(k,[]).get(k)).push(r)});G.forEach(a=>a.sort((x,y)=>x.ts-y.ts))};bld();
+const st={v:'home',b:'FC',unit:-1,q:'',ss:'t',sd:4,sdir:1,dr:false,ls:'a',ld:-1,ldir:-1,best:false,sel:null,ms:'m',md:1,mb:false,sy:0,pv:'home',nt:'rec'};
+const miss=r=>st.b=='FC'?r.go+r.ba+r.mi:st.b=='AP'?r.gr+r.go+r.ba+r.mi:r.nt*3-3*r.pf-2*r.gr-r.go;
+const clr=r=>r.gr+r.go+r.ba+r.mi?r.go+r.ba+r.mi?'':'FC':'AP';
+const better=(a,b)=>miss(a)-miss(b)||b.cb-a.cb||a.ad-b.ad;
+const bd=c=>`<span class="bg ${c||'n'}">${c||'CLEAR'}</span>`;
+const p2=n=>String(n).padStart(2,'0'),fdd=t=>{const d=new Date(t);return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()},fd=t=>{const d=new Date(t);return fdd(t)+' '+p2(d.getHours())+':'+p2(d.getMinutes())};
+const jk=id=>`linear-gradient(${id*47%360}deg,hsl(${id*37%360} 80% 74%),hsl(${(id*37+70)%360} 75% 62%))`;
+const has=i=>[0,1,2,3,4,5].some(d=>G.has(i*10+d));
+const CM={n:(a,b)=>S[a.s].t.localeCompare(S[b.s].t,'ja'),d:(a,b)=>a.d-b.d,l:(a,b)=>a.lv-b.lv,m:(a,b)=>miss(a)-miss(b),c:(a,b)=>b.cb-a.cb,a:(a,b)=>a.ad-b.ad};
+let ro;
+function vgrid(el,a,rh,mw,g,tp){ro&&ro.disconnect();let b=el.querySelector('#vb');if(!b){b=document.createElement('div');b.id='vb';el.append(b)}b.innerHTML='';b.style.cssText='position:relative';el.scrollTop=0;
+ if(!a.length){b.innerHTML='<p class="cnt" style="text-align:center;padding:48px 0">該当する項目がありません</p>';return}
+ let key='',lay='';const nd=new Map;
+ const draw=()=>{const W=b.clientWidth;if(W<=0)return;
+  const n=Math.max(1,Math.floor((W+g)/(mw+g))),cw=(W-g*(n-1))/n,rows=Math.ceil(a.length/n),u=rh+g;b.style.height=rows*u-g+'px';
+  const y=el.scrollTop-b.offsetTop,s=Math.max(0,Math.floor(y/u)-3),e=Math.min(rows,Math.ceil((y+el.clientHeight)/u)+3),k=[n,Math.round(cw*10),s,e].join();
+  if(k==key)return;key=k;const L=n+','+Math.round(cw*10);if(L!=lay){lay=L;nd.forEach(x=>x.remove());nd.clear()}const lo=s*n,hi=Math.min(a.length,e*n),fr=document.createDocumentFragment(),tm=document.createElement('div');nd.forEach((x,i)=>{if(i<lo||i>=hi){x.remove();nd.delete(i)}});
+  for(let i=lo;i<hi;i++){if(nd.has(i))continue;tm.innerHTML=tp(a[i],i,`position:absolute;left:${i%n*(cw+g)}px;top:${Math.floor(i/n)*u}px;width:${cw}px;height:${rh}px`);const x=tm.firstElementChild;if(!x)continue;nd.set(i,x);fr.append(x)}
+  b.append(fr)};
+ el.onscroll=draw;ro=new ResizeObserver(draw);ro.observe(el);ro.observe(b);draw()}
+const card=(r,i,p)=>{const s=S[r.s],d=D[r.d];return`<div class="cd" data-act="card" data-id="${r.id}" style="--c:${d.c};${p||''}"><div class="rs">${thm(r,240)}</div><div class="ci"><b class="tt">${s.t}</b><div class="rw"><span class="dc">${d.n} ${r.lv}</span>${bd(clr(r))}</div><div class="rw"><small class="sb">ミス</small><span class="mv">${miss(r)}</span><span class="sb" style="margin-left:auto">${fdd(r.ts)}</span></div></div></div>`};
+const sRow=(s,i,p)=>`<div class="sr" data-act="song" data-s="${s.i}" style="${p}">${JK(s)}<div class="ci" style="gap:6px"><b class="tt">${s.t}</b><span class="sb">${s.co} / ${s.ly} / ${s.ar}</span><div class="rw"><span class="ut">${tgs(s)}</span><span style="margin-left:auto;display:flex;gap:5px">${D.map((d,j)=>s.lv[j]?`<i class="dd ${G.has((s.i)*10+j)?'on':''}" style="--s:${d.s}"></i>`:'').join('')}</span></div></div></div>`;
+const T={home:'ホーム',songs:'曲から探す',list:'一覧',notif:'通知',set:'設定'},NAV=[['home','home'],['songs','music'],['list','grid'],['set','gear']];
+$('#nav').innerHTML=NAV.map(a=>`<a data-act="go" data-v="${a[0]}">${ic(a[1])}<span>${T[a[0]]}</span>${a[0]=='notif'?'<em class="bdg nbd" style="margin-left:auto"></em>':''}</a>`).join('');
+const dirBtn=k=>`<button class="btn" id="dir" data-act="dir">${ic(st[k]>0?'up':'down')}${st[k]>0?'昇順':'降順'}</button>`;
+const lvt=()=>{const m=new Map();S.forEach((s,i)=>s.lv.forEach((l,d)=>{if(!l)return;const a=m.get(l)||m.set(l,[0,0,0,0]).get(l),h=G.get(i*10+d);a[0]++;if(h){a[1]++;if(h.some(r=>r.go+r.ba+r.mi==0))a[2]++;if(h.some(r=>clr(r)=='AP'))a[3]++}}));
+ const C=['linear-gradient(90deg,#2C7BF5,#14C29B)','linear-gradient(90deg,#FF6FB0,#FFB347)','linear-gradient(90deg,#31C9F0,#FF7DCB,#FFD04A)'],pc=(n,t)=>t?Math.round(n/t*100):0;
+ return`<h3>レベル別の達成状況</h3><div class="lvt"><div class="lvr lvh"><span></span>${['クリア','FC','AP'].map((l,i)=>`<span><i class="jd" style="background:${C[i]}"></i>${l}</span>`).join('')}</div>${[...m].sort((a,b)=>b[0]-a[0]).map(([l,a])=>`<div class="lvr"><b>Lv.${l}</b>${[1,2,3].map(i=>`<div><div class="rw" style="justify-content:space-between"><b>${a[i]}<small class="sb"> / ${a[0]}</small></b><small class="sb">${pc(a[i],a[0])}%</small></div><div class="jb"><i style="width:${pc(a[i],a[0])}%;background:${C[i-1]}"></i></div></div>`).join('')}</div>`).join('')}</div>`};
+const selV=()=>{const s=S[st.sel[0]],d=D[st.sel[1]];return`<div class="pg"><div class="vs" id="vs"><div class="tb"><button class="btn" data-act="sback">${ic('back')}曲から探す画面に戻る</button></div><div class="tb"><span class="ut" style="padding:7px 12px;font-size:12px">${s.t} / ${d.n}</span></div><div class="tb"><select class="btn" data-k="ms"><option value="m">ミス数順</option><option value="a">追加日順</option></select><button class="btn" id="dir" data-act="dir"></button><label class="sw"><input type="checkbox" data-k="mb"><i></i>自己ベストのみ</label></div><p class="cnt" id="cn"></p><div id="vb"></div></div></div>`};
+const VW={
+home(){const g=[...G.values()],
+ k=[['登録リザルト',R.length],['FC達成',g.filter(a=>a.some(clr)).length],['AP達成',g.filter(a=>a.some(r=>clr(r)=='AP')).length],['未確認の通知',N.length+ER.length]];
+ return`<div class="pg sy"><div class="hero"><h1>ドライブの画像から、<br>自己ベストを見つける。</h1><p>リザルト画像をOCRで読み取り、記録の更新をお知らせします。</p><div class="row"><button class="btn p" data-act="up">${ic('upload')}画像を追加</button><button class="btn" data-act="sync">${PS?ic('play')+'続きから再開':ic('sync')+'ドライブと同期'}</button></div>
+ </div>
+ <div class="stl">${k.map(a=>`<div><b>${a[1]}</b><span>${a[0]}</span></div>`).join('')}</div>${lvt()}<h3>最近追加したリザルト</h3><div class="cg">${[...R].sort((a,b)=>b.ad-a.ad).slice(0,6).map(r=>card(r)).join('')}</div></div>`},
+songs(){if(st.sel)return selV();return`<div class="pg"><div class="vs" id="vs"><div class="tb"><select class="btn" data-k="unit" data-n="1"><option value="-1">すべてのユニット</option>${UN.map((u,i)=>`<option value="${i}">${u}</option>`).join('')}</select><label class="sf">${ic('search')}<input data-k="q" placeholder="タイトル・作詞・作曲・編曲で検索" autocomplete="off"></label></div>
+ <div class="tb"><select class="btn" data-k="ss"><option value="t">タイトル順</option><option value="rel">公開日順</option><option value="lv">レベル順</option></select><select class="btn" id="sl" data-k="sd" data-n="1" hidden>${D.map((d,i)=>`<option value="${i}">${d.n}</option>`).join('')}</select><button class="btn" id="dir" data-act="dir"></button><label class="sw"><input type="checkbox" data-k="dr"><i></i>ドライブ内の曲のみ</label></div><p class="cnt" id="cn"></p><div id="vb"></div></div></div>`},
+list(){return`<div class="pg"><div class="tb"><select class="btn" data-k="ls"><option value="n">名前順</option><option value="l">楽曲レベル順</option><option value="m">ミス数順</option><option value="a">追加日順</option></select><select class="btn" id="ll" data-k="ld" data-n="1" hidden><option value="-1">全難易度</option>${D.map((d,i)=>`<option value="${i}">${d.n}</option>`).join('')}</select><button class="btn" id="dir" data-act="dir"></button><label class="sw"><input type="checkbox" data-k="best"><i></i>自己ベストのみ</label></div>
+ <p class="cnt" id="cn"></p><div class="vs" id="vs"></div></div>`},
+notif(){const L=st.nt=='err'?ER:N;return`<div class="pg sy"><div class="tb"><button class="btn" data-act="back">${ic('back')}戻る</button>${st.nt=='rec'&&N.length?`<button class="btn" data-act="nclr">${ic('check')}既読にする</button>`:''}</div><div class="tabs" style="margin-bottom:16px">${[['rec','記録更新',N],['err','エラー',ER]].map(a=>`<button class="${st.nt==a[0]?'on':''}" data-act="nt" data-v="${a[0]}">${a[1]} ${a[2].length}</button>`).join('')}</div>
+ ${L.map(n=>{if(n.k=='err')return`<div class="ni e"><div class="ni-i">${ic('alert')}</div><div class="ci" style="gap:2px"><b class="tt">${n.f}</b><span class="sb w">${n.tx}</span></div><span class="row" style="flex:none">${/^dup:\d+:./.test(n.e)?`<button class="btn" data-act="cmp" data-u="${n.u}">${ic('image')}重複を比較</button>`:''}<button class="btn" data-act="eimg" data-u="${n.u}">${ic('image')}画像を見る</button><button class="btn" data-act="man" data-u="${n.u}">${ic('edit')}手動登録</button><button class="btn" data-act="fix" data-u="${n.u}" data-v="r">${ic('scan')}再解析</button><button class="btn d" data-act="fix" data-u="${n.u}" data-v="d">${ic('trash')}削除</button></span></div>`;
+ const r=R.find(x=>x.id==n.id);return r?`<div class="ni" data-act="card" data-id="${r.id}"><div class="ni-i">${ic('trophy')}</div><div class="ci" style="gap:4px"><b class="tt">${S[r.s].t}</b><div class="rw"><span class="dc" style="--c:${D[r.d].c}">${D[r.d].n} ${r.lv}</span><span class="sb">${n.tx}</span></div></div><span class="sb">${fd(n.t)}</span></div>`:''}).join('')||'<p class="cnt">通知はありません</p>'}</div>`},
+set(){return`<div class="pg sy"><div class="cx"><h3>アカウント</h3><div class="set"><span>${US.n}<br><small class="sb">${US.e}</small></span><button class="btn" data-act="logout">${ic('logout')}ログアウト</button></div></div>
+ <div class="cx"><h3>Googleドライブ</h3><div class="set"><span>連携フォルダ<br><small class="sb">マイドライブ / ${FN}</small></span><button class="btn p" data-act="sync">${PS?ic('play')+'続きから再開':ic('sync')+'今すぐ同期'}</button></div></div>
+ <div class="cx"><h3>同期の不整合</h3><p class="sb w" style="margin:0 0 6px">画像はドライブにありますが、記録がありません。復元か削除を選べます。</p>${ER.map(x=>`<div class="set"><b>${x.f}</b><span class="row"><button class="btn" data-act="fix" data-u="${x.u}" data-v="r">${ic('scan')}OCRで復元</button><button class="btn d" data-act="fix" data-u="${x.u}" data-v="d">${ic('trash')}削除</button></span></div>`).join('')||'<p class="sb">不整合はありません</p>'}</div></div>`}};
+const selP=()=>{$('#dir').innerHTML=ic(st.md>0?'up':'down')+(st.md>0?'昇順':'降順');let a=R.filter(r=>r.s==st.sel[0]&&r.d==st.sel[1]);
+ if(st.mb){const m=new Map();a.forEach(r=>{const k=r.s*10+r.d,c=m.get(k);if(!c||better(r,c)<0)m.set(k,r)});a=[...m.values()]}
+ const ch=st.ms=='m'?'mca':'a';a.sort((x,y)=>{for(const c of ch){const v=CM[c](x,y);if(v)return v*st.md}return 0});
+ $('#cn').textContent=a.length+'件';vgrid($('#vs'),a,104,300,12,card)};
+const P={songs(){if(st.sel)return selP();$('#sl').hidden=st.ss!='lv';$('#dir').innerHTML=ic(st.sdir>0?'up':'down')+(st.sdir>0?'昇順':'降順');const q=st.q.trim().toLowerCase();
+ let a=S.filter(s=>(st.unit<0||s.u.includes(st.unit))&&(!st.dr||has(s.i))&&(!q||[s.t,s.ly,s.co,s.ar].some(x=>x.toLowerCase().includes(q)))&&(st.ss!='lv'||s.lv[st.sd]));
+ const c=(x,y)=>st.ss=='t'?x.t.localeCompare(y.t,'ja'):st.ss=='rel'?x.rel-y.rel:x.lv[st.sd]-y.lv[st.sd];a.sort((x,y)=>st.sdir*(c(x,y)||x.id-y.id));
+ $('#cn').textContent=a.length+'曲';vgrid($('#vs'),a,88,330,12,sRow)},
+ list(){$('#ll').hidden=st.ls!='l';$('#dir').innerHTML=ic(st.ldir>0?'up':'down')+(st.ldir>0?'昇順':'降順');
+ let a=R.filter(r=>st.ls!='l'||st.ld<0||r.d==st.ld);
+ if(st.best){const m=new Map();a.forEach(r=>{const k=r.s*10+r.d,c=m.get(k);if(!c||better(r,c)<0)m.set(k,r)});a=[...m.values()]}
+ const ch={n:'ndmca',l:'ldnmca',m:'mcldna',a:'a'}[st.ls];a.sort((x,y)=>{for(const c of ch){const v=CM[c](x,y);if(v)return v*st.ldir}return 0});
+ $('#cn').textContent=a.length+'件';vgrid($('#vs'),a,104,300,12,card)}};
+function view(){$('#view').innerHTML=VW[st.v]();$('#ttl').textContent=T[st.v];$('#bs').value=st.b;document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v==st.v));
+ document.querySelectorAll('#view [data-k]').forEach(e=>{const x=st[e.dataset.k];e.type=='checkbox'?e.checked=x:e.value=x});P[st.v]&&P[st.v]();ub()}
+const ub=()=>document.querySelectorAll('.nbd').forEach(e=>{e.textContent=N.length+ER.length;e.hidden=!(N.length+ER.length)}),go=v=>{if(v=='notif'&&st.v!='notif')st.pv=st.v;st.v=v;$('#app').classList.remove('open');view()};
+const rv=()=>{EK++;OU.forEach(u=>URL.revokeObjectURL(u));OU=[]},openM=(h,c='')=>{rv();$('#md').innerHTML=`<div class="sh ${c}">${h}</div>`;$('#md').classList.add('on')},closeM=()=>{$('#md').classList.remove('on');rv()},X=`<button class="ib x" data-act="close" aria-label="閉じる">${ic('x')}</button>`;
+function toast(m,v,er,cb){const t=document.createElement('div'),s=document.createElement('span');t.className='t'+(er?' er':'');t.innerHTML=ic(er?'alert':'check');s.textContent=m;t.append(s);if(v)t.onclick=()=>{cb&&cb();go(v);t.remove()};$('#ts').append(t);setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity=0;setTimeout(()=>t.remove(),400)},er?8000:5000)}
+function pickD(i){const s=S[i];openM(`${X}<div class="rw" style="margin:0 44px 16px 0">${JK(s)}<div class="ci" style="gap:2px"><b style="font-size:18px;line-height:1.3">${s.t}</b><span class="sb">${tgs(s)}</span></div></div><h3>難易度を選択</h3>${D.map((d,j)=>s.lv[j]?`<div class="dp" data-act="pick" data-s="${i}" data-d="${j}" style="--c:${d.c}"><span class="dc">${d.n}</span><b>Lv.${s.lv[j]}</b><span class="sb">${(G.get(i*10+j)||[]).length}件</span>${ic('chev')}</div>`:'').join('')}`,'sm')}
+function hist(r,b){let h=G.get(r.s*10+r.d),m=1e9;if(b)h=h.filter(x=>{const v=miss(x);return v<m?(m=v,1):0});
+ const v=h.map(miss),mx=Math.max(...v,1),Xp=i=>44+(v.length>1?i*536/(v.length-1):268),Y=y=>186-y/mx*150;
+ return`<svg class="ch" viewBox="0 0 600 214"><defs><linearGradient id="lg1" gradientUnits="userSpaceOnUse" x1="44" x2="580" y1="0" y2="0"><stop offset="0" stop-color="#2C7BF5"/><stop offset="1" stop-color="#14C29B"/></linearGradient></defs>${[0,.5,1].map(k=>`<line x1="44" x2="580" y1="${186-k*150}" y2="${186-k*150}" stroke="#E1EAF6"/><text x="36" y="${190-k*150}" text-anchor="end" font-size="11" fill="#6A7A94">${Math.round(mx*k)}</text>`).join('')}<polyline fill="none" stroke="url(#lg1)" stroke-width="3" stroke-linejoin="round" points="${v.map((y,i)=>Xp(i)+','+Y(y)).join(' ')}"/>${v.map((y,i)=>`<circle cx="${Xp(i)}" cy="${Y(y)}" r="5" fill="#fff" stroke="#2C7BF5" stroke-width="2.5"/>`).join('')}<text x="44" y="208" font-size="11" fill="#6A7A94">${fdd(h[0].ts)}</text><text x="580" y="208" text-anchor="end" font-size="11" fill="#6A7A94">${fdd(h[h.length-1].ts)}</text></svg>`+'<h3 style="margin:16px 0 4px">履歴</h3>'+[...h].reverse().map(x=>`<div class="hr"><span>${fd(x.ts)}</span><span>ミス <b>${miss(x)}</b> / コンボ ${x.cb}</span>${bd(clr(x))}</div>`).join('')}
+function detail(id){const r=R.find(x=>x.id==id);if(!r)return;const s=S[r.s],d=D[r.d],c=clr(r);
+ openM(`${X}
+ <div class="rw" style="margin:0 44px 14px 0;gap:14px">${JK(s,'width:76px;height:76px')}<div class="ci" style="gap:8px;justify-content:center"><b style="font-size:19px;line-height:1.3">${s.t}</b><div class="rw"><span class="dc" style="--c:${d.c}">${d.n}</span><b>Lv.${r.lv}</b></div></div></div><div class="big">${thm(r,240)}<div id="oi"></div><div style="position:absolute;left:14px;bottom:14px">${bd(c)}</div></div>
+ <div class="g3"><div class="kv"><small>ミス数（${BS[st.b]}）</small><b>${miss(r)}</b></div><div class="kv"><small>コンボ数</small><b>${r.cb}</b><small>/ ${r.nt}</small></div></div>
+ ${J.map(j=>`<div class="jr"><span><i class="jd" style="background:${j[1]}"></i>${j[0]}</span><b>${r[j[2]]}</b></div>`).join('')}
+ <div class="row" style="margin-top:14px"><button class="btn" data-act="edit">${ic('edit')}手動修正</button><button class="btn" data-act="ocr" data-id="${r.id}">${ic('scan')}OCR再実行</button><button class="btn d" data-act="del" data-id="${r.id}">${ic('trash')}削除</button></div>
+ ${mF({md:'e',id:r.id,hd:1,s:r.s,d:r.d,pf:r.pf,gr:r.gr,go:r.go,ba:r.ba,mi:r.mi,cb:r.cb,ts:r.ts})}<div class="inf"><div><small>撮影日時</small><span>${fd(r.ts)}</span></div></div><div class="inf"><div><small>楽曲タグ</small><span><span class="ut">${tgs(s)}</span></span></div><div><small>作詞・作曲・編曲</small><span><em class="nw">作詞 ${s.ly}</em><em class="nw">作曲 ${s.co}</em><em class="nw">編曲 ${s.ar}</em></span></div><div><small>公開日時</small><span>${fd(s.rel)}</span></div></div>
+ <div class="rw" style="justify-content:space-between;margin:22px 0 0"><h3 style="margin:0">推移（${d.n}）</h3><div class="tabs">${[['0','すべて'],['1','自己ベストのみ']].map(a=>`<button class="${a[0]=='0'?'on':''}" data-act="hist" data-id="${r.id}" data-v="${a[0]}">${a[1]}</button>`).join('')}</div></div><div id="hc">${hist(r,false)}</div>`,'dt');eim(r.id,'#oi',1);mfU('init')}
+const A={go:t=>go(t.dataset.v),side:()=>$('#app').classList.toggle(mob()?'open':'col'),close:closeM,song:t=>pickD(+t.dataset.s),pick:t=>{st.sy=$('#vs').scrollTop;st.sel=[+t.dataset.s,+t.dataset.d];closeM();go('songs')},card:t=>detail(t.dataset.id),sback:()=>{st.sel=null;view();$('#vs').scrollTop=st.sy},back:()=>go(st.pv||'home'),
+ dir:()=>{const k=st.v=='songs'?st.sel?'md':'sdir':'ldir';st[k]*=-1;P[st.v]()},nt:t=>{st.nt=t.dataset.v;view()},nclr:()=>{N=[];sv();view()},up:()=>$('#fi').click(),sync:()=>TX?A.tmax():sync(),tmin:()=>{if(TX){TXM=1;$('#tx').classList.remove('on');scU()}},tmax:()=>{if(TX){TXM=0;$('#tx').classList.add('on');scU()}},tpz:()=>{if(!TX||PZ)return;PZ=1;$('#tpz').disabled=true;$('#tpz').innerHTML=ic('pause')+'中断しています…';scU()},scx:()=>{PS='';scU()},
+ login:async()=>{if(!cid())return toast('OAuthクライアントIDが未設定です。コード内のCID_DEFAULTに設定してください',null,1);try{await auth();await boot()}catch(e){toast(e.message||'ログインに失敗しました',null,1)}},logout:()=>{TKN&&window.google&&google.accounts.oauth2.revoke(TKN,()=>{});TKN='';LS.removeItem('sr_li');R=[];ER=[];N=[];bld();RU=[];PS='';scU();$('#lg').hidden=false;go('home')},edit:()=>{$('#mf').hidden=!$('#mf').hidden},
+ 
+ ocr:t=>{const id=t.dataset.id,r=R.find(x=>x.id==id);if(!r)return;closeM();
+  run('OCRを再実行しています',['OCRで解析'],async()=>{txS(0,.3);const o=await redo(r.fm,1);if(o.err)throw new Error(etx(o.err)+'　元の記録は変更されていません');toast('OCRの再解析が完了しました')}).then(()=>{view();R.some(x=>x.id==id)&&detail(id)})},
+ del:t=>openM(`<h3 style="margin-right:30px">このリザルトを削除しますか？</h3><p class="sb w" style="margin:0 0 16px">画像はGoogleドライブからも削除されます。この操作は取り消せません。</p><div class="row"><button class="btn d" data-act="delok" data-id="${t.dataset.id}">削除する</button><button class="btn" data-act="close">キャンセル</button></div>`,'sm'),
+ delok:t=>{const id=t.dataset.id;closeM();run('削除しています',['ドライブから画像を削除','記録を更新'],async()=>{txS(0,.3);await pat(id,{trashed:true});txS(1,.5);R=R.filter(x=>x.id!=id);N=N.filter(n=>n.id!=id);bld();sv()}).then(ok=>{view();ok&&toast('削除しました。ドライブの画像も削除されました')})},
+ hist:t=>{document.querySelectorAll('.tabs [data-act=hist]').forEach(b=>b.classList.toggle('on',b==t));$('#hc').innerHTML=hist(R.find(x=>x.id==t.dataset.id),t.dataset.v=='1')},
+ cmp:t=>{const e=ER.find(x=>x.u==t.dataset.u);if(!e)return;const r=R.find(x=>x.id==String(e.e).split(':')[2]),f=e.fm,m=f.imageMediaMetadata||{},
+   a=[['ファイル名',e.f],['撮影日時',fd(tsOf(f))],['追加日時',fd(Date.parse(f.createdTime))],['画像サイズ',`${m.width||'-'}×${m.height||'-'}`]],
+   b=r?[['ファイル名',esc(r.nm)],['撮影日時',fd(r.ts)],['追加日時',fd(r.ad)],['画像サイズ',`${r.W||'-'}×${r.H||'-'}`]]:[],
+   ex=r?[['楽曲',S[r.s].t],['難易度',`${D[r.d].n} Lv.${r.lv}`],['判定',J.map(j=>`${j[0]} ${r[j[2]]}`).join(' / ')],['コンボ',`${r.cb} / ${r.nt}`]]:[],
+   col=(h,i,x,o)=>`<div><b class="cl">${h}</b><div class="big" id="${i}">${ic('image')}</div><div class="inf">${x.map((q,k)=>`<div><small>${q[0]}</small><span${o[k]&&o[k][1]==q[1]?' class="eq"':''}>${q[1]}</span></div>`).join('')}</div></div>`;
+   openM(`${X}<h3 style="margin-right:44px">重複の比較</h3><p class="sb w" style="margin:0 0 12px">${e.tx}</p><div class="dg cmpv">${col('今回の画像（重複の可能性）','ei',a,b)}${r?col('登録済みのリザルト','ei2',b.concat(ex),a):`<div><b class="cl">登録済みのリザルト</b><p class="sb w">一致した記録が見つかりません（削除された可能性があります）。</p></div>`}</div><div class="row" style="margin-top:14px">${r?`<button class="btn" data-act="card" data-id="${r.id}">${ic('trophy')}登録済みを開く</button>`:''}<button class="btn p" data-act="man" data-u="${e.u}">${ic('edit')}手動で登録</button><button class="btn" data-act="fix" data-u="${e.u}" data-v="r">${ic('scan')}再解析</button><button class="btn d" data-act="fix" data-u="${e.u}" data-v="d">${ic('trash')}この画像を削除</button></div>`);eim(e.u,'#ei');r&&eim(r.id,'#ei2')},
+  eimg:t=>{const e=ER.find(x=>x.u==t.dataset.u);if(!e)return;
+  openM(`${X}<h3 style="margin-right:44px">${e.f}</h3><p class="sb w" style="margin:0 0 12px">${e.tx}</p><div class="big" id="ei">${ic('image')}</div><div class="row" style="margin-top:14px"><button class="btn p" data-act="man" data-u="${e.u}">${ic('edit')}手動で登録</button><button class="btn" data-act="fix" data-u="${e.u}" data-v="r">${ic('scan')}再解析</button><button class="btn d" data-act="fix" data-u="${e.u}" data-v="d">${ic('trash')}削除</button></div>`,'dt');eim(e.u)},
+ man:t=>{const e=ER.find(x=>x.u==t.dataset.u);if(!e)return;
+  openM(`${X}<h3 style="margin-right:44px">手動で登録</h3><p class="sb w" style="margin:0 0 12px">${e.f}　${e.tx}</p><div class="dg"><div class="big" id="ei" style="align-self:start">${ic('image')}</div>${mF({md:'m',id:e.u,s:-1,d:'',pf:0,gr:0,go:0,ba:0,mi:0,cb:0,ts:tsOf(e.fm)})}</div>`);eim(e.u);mfU('init')},
+ mpick:t=>{const s=S[+t.dataset.s];if(!s)return;$('#m_s').value=ML(s);mfU('m_s')},
+ msave:()=>{const f=$('#mf'),s=mS(),dv=$('#m_d').value;if(!f)return;if(!s||dv==='')return toast('楽曲と難易度を選択してください',null,1);
+  const d=+dv,nt=s.nt[d],v=k=>Math.max(0,Math.floor(+$('#m_'+k).value)||0),n={pf:v('pf'),gr:v('gr'),go:v('go'),ba:v('ba'),mi:v('mi'),cb:v('cb')},sm=n.pf+n.gr+n.go+n.ba+n.mi,tv=new Date($('#m_ts').value).getTime();
+  if(!(n.go+n.ba+n.mi))n.cb=nt;
+  if(sm!=nt)return toast(`判定数の合計（${sm}）がノーツ数（${nt}）と一致しません`,null,1);if(n.cb>nt)return toast(`コンボ数がノーツ数（${nt}）を超えています`,null,1);if(isNaN(tv))return toast('撮影日時を正しく入力してください',null,1);
+  const b={s:s.i,d,lv:s.lv[d],nt,...n,ts:Math.floor(tv/1000)*1000};
+  if(f.dataset.md=='e'){const r=R.find(x=>x.id==f.dataset.id);if(!r)return;const o={...r,...b};closeM();run('リザルトを修正しています',['ドライブに保存'],async()=>{txS(0,.4);await pat(r.id,{appProperties:{r:enc(o)}});Object.assign(r,o);bld()}).then(ok=>{view();ok&&(detail(r.id),toast('リザルトを修正しました'))});return}
+  const e=ER.find(x=>x.u==f.dataset.id);if(!e)return;const fl=e.fm,m=fl.imageMediaMetadata||{},rec={...b,id:fl.id,nm:fl.name,fm:fl,ad:Date.parse(fl.createdTime),th:fl.thumbnailLink||'',W:m.width||0,H:m.height||0,h:''};
+  closeM();run('リザルトを登録しています',['ドライブに保存'],async()=>{txS(0,.4);await commit(fl,{rec});R=R.filter(x=>x.id!=fl.id);ER=ER.filter(x=>x.u!=fl.id);R.push(rec);bld()}).then(ok=>{view();ok&&toast('手動でリザルトを登録しました')})},
+ fix:t=>{const e=ER.find(x=>x.u==t.dataset.u);if(!e)return;closeM();
+  t.dataset.v=='d'?run('削除しています',['ドライブから画像を削除'],async()=>{txS(0,.3);await pat(e.u,{trashed:true});ER=ER.filter(x=>x!=e)}).then(ok=>{view();ok&&toast('ドライブから画像を削除しました')})
+  :run('OCRを再実行しています',['OCRで解析'],async()=>{txS(0,.3);const o=await redo(e.fm);toast(o.rec?'OCRで記録を復元しました':etx(o.err),null,!o.rec)}).then(()=>view())}};
+const BK=['up','ocr','del','delok','man','msave','fix','logout'];
+document.addEventListener('click',e=>{if(e.target.id=='md')return closeM();const t=e.target.closest('[data-act]');if(!t||!A[t.dataset.act])return;if(TX&&BK.includes(t.dataset.act))return toast('同期中のため操作できません。完了後、または中断後にお試しください',null,1);A[t.dataset.act](t)});
+document.addEventListener('input',e=>{const t=e.target,k=t.dataset.k;if(/^m_/.test(t.id))return mfU(t.id);if(t.id=='bs'){st.b=t.value;return view()}if(!k)return;const v=t.type=='checkbox'?t.checked:t.dataset.n?+t.value:t.value;st[k]=v;if(k=='ls')st.ldir=v=='a'?-1:1;if(k=='ss')st.sdir=v=='rel'?-1:1;if(k=='ms')st.md=v=='a'?-1:1;P[st.v]()});
+document.addEventListener('keydown',e=>e.key=='Escape'&&closeM());
+document.addEventListener('focusin',e=>{const t=e.target;if(t.id=='m_s'&&mob())setTimeout(()=>t.closest('label').scrollIntoView({block:'start',behavior:'smooth'}),300)});
+$('#fi').onchange=e=>{const f=[...e.target.files].filter(x=>/^image\//.test(x.type));e.target.value='';f.length&&sync(f)};
+addEventListener('beforeunload',e=>{if(TX){e.preventDefault();e.returnValue=''}});
+view();
+if(LS.getItem('sr_li')&&cid())auth().then(boot).catch(()=>{});
+</script></body></html>
